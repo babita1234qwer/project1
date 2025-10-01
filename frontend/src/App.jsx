@@ -5,17 +5,38 @@ import { checkAuth } from './authslice.js';
 import { useDispatch,useSelector } from 'react-redux';
 import { useEffect } from 'react';
 import Signup from "./pages/signup";
-import NotificationToast from './components/NotificationToast';
+// App.js or your routing file
+import NotificationsPage from './pages/Notifications';
+//import NotificationToast from './components/NotificationToast';
 
 import EmergencyRequest from "./pages/EmergencyRequest.jsx";
 import EmergencyForm from './pages/EmergencyForm.jsx';
  import EmergenciesPage from "./pages/EmergenciesPage.jsx";
 import EmergencyMapPage from './pages/EmergencyMapPage';
+import { connectSocket, disconnectSocket } from './services/socket';
+
 function App(){
   const {isAuthenticated,user,loading} = useSelector((state) => state.auth);
  const dispatch = useDispatch();
 useEffect(() => {
   dispatch(checkAuth())},[dispatch]);
+  useEffect(() => {
+    if (isAuthenticated && user?._id) {
+      const socket = connectSocket(user._id);
+      
+      // Listen for new notifications
+      socket.on('newNotification', (notification) => {
+        // Update your notification state or show a toast
+        console.log('New notification:', notification);
+      });
+      
+      return () => {
+        disconnectSocket();
+      };
+    }
+  }, [isAuthenticated, user]);
+  
+  
  
   return (
     
@@ -29,7 +50,8 @@ useEffect(() => {
               <Route path="/emergency/page" element={<EmergenciesPage />} />
                       <Route path="/emergency/create" element={<EmergencyForm />} />
 <Route path="/emergency/map" element={<EmergencyMapPage />} />
-
+// Add this route to your router
+<Route path="/notifications" element={<NotificationsPage />} />
     </Routes>
   )
 }

@@ -13,6 +13,7 @@ const authrouter = require('./routes/userauth');
 const emergencyRouter = require('./routes/emergency');
 const notificationRouter = require("./routes/notification");
 const locationrouter=require("./routes/location");
+const notificationrouter=require("./routes/pushNotification")
 
 const server = http.createServer(app);
 
@@ -59,7 +60,8 @@ app.use(cookieparser());
 app.use('/user', authrouter);
 app.use('/emergencies', emergencyRouter);
 app.use('/location', locationrouter);
-app.use("/notifications", notificationRouter);
+app.use("/notifications",notificationRouter);
+app.use('/pushnotification',notificationrouter);
 
 const initialiseconnection = async () => {
   try {

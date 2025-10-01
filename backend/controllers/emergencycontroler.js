@@ -1,6 +1,7 @@
 const Emergency = require("../models/emergency");
 const User = require("../models/user");
 const Notification = require("../models/notification");
+const { sendPushNotification } = require('../services/pushNotification');
 const axios = require("axios");
 let io = null;
 try {
@@ -113,24 +114,29 @@ const createEmergency = async (req, res) => {
     if (notifications.length > 0) {
       await Notification.insertMany(notifications);
     }
-const pushPromises = nearbyUsers.map(user => {
+    const pushPromises = nearbyUsers.map(user => {
       if (user.pushTokens && user.pushTokens.length > 0) {
         const tokens = user.pushTokens.map(t => t.token);
+        console.log(`📲 Attempting to send to user ${user.name} with tokens:`, tokens); // <-- CHECK THIS LOG
+        const notification = notifications.find(n => n.userId.toString() === user._id.toString());
         return sendPushNotification(
           tokens,
-          notifications.find(n => n.userId.toString() === user._id.toString()).title,
-          notifications.find(n => n.userId.toString() === user._id.toString()).message,
+          notification.title,
+          notification.message,
           { emergencyId: emergency._id.toString(), type: 'emergency_alert' }
         );
+      } else {
+        console.log(`⚠️ User ${user.name} has no push tokens registered.`); // <-- CHECK THIS LOG
       }
       return Promise.resolve();
     });
 
-    await Promise.all(pushPromises);
+    const results = await Promise.all(pushPromises);
+    console.log('📬 Push notification sending results:', results); // <-- CHECK THIS LOG
 
     // 🔔 Emit socket events to nearby users
     nearbyUsers.forEach((user) => {
-      emitToUser(user._id,NEW_EMERGENCY, {
+      emitToUser(user._id,EVENTS.NEW_EMERGENCY, {
         emergency: {
           _id: emergency._id,
           emergencyType: emergency.emergencyType,

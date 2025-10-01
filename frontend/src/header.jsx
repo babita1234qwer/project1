@@ -1,9 +1,13 @@
+// components/Navbar.jsx
+
 import './index.css';
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { logoutUser } from './authslice';
 import { useLocation } from 'react-router-dom';
+import { Badge } from "@heroui/react";
+import axiosClient from "./utils/axiosclient";
 
 import {
   Navbar,
@@ -18,6 +22,24 @@ import {
   Avatar,
   Button
 } from "@heroui/react";
+
+// Notification Bell Icon
+export const NotificationBell = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    className="h-6 w-6"
+    fill="none"
+    viewBox="0 0 24 24"
+    stroke="currentColor"
+  >
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
+    />
+  </svg>
+);
 
 export const HelpNetLogo = () => (
   <svg
@@ -41,10 +63,69 @@ export default function NavbarHelpNet() {
   const {isAuthenticated, user, loading} = useSelector((state) => state.auth);
   const dispatch = useDispatch();
   const [solvedProblems, setSolvedProblems] = useState([]);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(0);
   
   const handleLogout = () => {
     dispatch(logoutUser());
     setSolvedProblems([]);
+  };
+
+  // Fetch notifications
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotifications();
+      
+      // Set up polling for new notifications
+      const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
+      
+      return () => clearInterval(interval);
+    }
+  }, [isAuthenticated]);
+
+  
+  // The CORRECTED function
+const fetchNotifications = async () => {
+  try {
+    const response = await axiosClient.get('/notifications');
+    
+    // The actual array of notifications is in response.data.data
+    const notificationsArray = response.data.data;
+   // const notificationsArray = response.data.data;
+
+    // ADD THIS LOG TO SEE THE ARRAY YOU'RE TRYING TO USE
+    console.log("Notifications array:", notificationsArray);
+
+    if (Array.isArray(notificationsArray)) {
+      setNotifications(notificationsArray);
+      const unread = notificationsArray.filter(n => !n.read).length;
+      setUnreadCount(unread);
+    } else {
+      // This case is now less likely, but good to keep for safety
+      console.error('API did not return an array in the data property. Received:', response.data);
+      setNotifications([]);
+      setUnreadCount(0);
+    }
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    setNotifications([]);
+    setUnreadCount(0);
+  }
+};
+  const markAsRead = async (notificationId) => {
+    try {
+      await axiosClient.patch(`/notifications/${notificationId}/read`);
+      
+      // Update local state
+      setNotifications(prev => 
+        prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
+      );
+      
+      // Update unread count
+      setUnreadCount(prev => Math.max(0, prev - 1));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
   };
 
   // Check if we're on the home page to show the hero section
@@ -116,8 +197,48 @@ export default function NavbarHelpNet() {
           </NavbarItem>
         </NavbarContent>
 
-        {/* Right: Profile Dropdown */}
-        <NavbarContent as="div" justify="end" className="flex-shrink-0">
+        {/* Right: Notifications + Profile Dropdown */}
+        <NavbarContent as="div" justify="end" className="flex-shrink-0 gap-2">
+          {isAuthenticated && (
+            <Dropdown placement="bottom-end">
+              <DropdownTrigger>
+                <Badge color="danger" content={unreadCount} isInvisible={unreadCount === 0}>
+                  <Button isIconOnly color="transparent" className="text-white" aria-label="Notifications">
+                    <NotificationBell />
+                  </Button>
+                </Badge>
+              </DropdownTrigger>
+              
+              <DropdownMenu aria-label="Notifications" variant="flat" className="max-w-80">
+                <DropdownItem key="header" className="opacity-100">
+                  <p className="font-semibold">Notifications</p>
+                </DropdownItem>
+                
+                {notifications.length === 0 ? (
+                  <DropdownItem key="empty" className="opacity-100">
+                    <p className="text-center py-2">No new notifications</p>
+                  </DropdownItem>
+                ) : (
+                  notifications.slice(0, 5).map((notification) => (
+                    <DropdownItem 
+                      key={notification._id} 
+                      className={`opacity-100 ${!notification.read ? 'bg-blue-50' : ''}`}
+                      onClick={() => markAsRead(notification._id)}
+                    >
+                      <div className="flex flex-col gap-1">
+                        <p className="font-medium text-sm">{notification.title}</p>
+                        <p className="text-xs text-gray-600">{notification.message}</p>
+                        <p className="text-xs text-gray-400">
+                          {new Date(notification.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    </DropdownItem>
+                  ))
+                )}
+              </DropdownMenu>
+            </Dropdown>
+          )}
+          
           {isAuthenticated ? (
             <Dropdown placement="bottom-end">
               <DropdownTrigger>
