@@ -1,5 +1,3 @@
-// services/pushNotification.js
-// services/pushNotification.js
 const admin = require('firebase-admin');
 const serviceAccount = require('../config/firebase-service-account.json');
 
@@ -17,32 +15,36 @@ const sendPushNotification = async (tokens, title, message, data = {}) => {
   console.log('Data:', data);
 
   try {
-    const payload = {
+    // Use sendMulticast with the correct structure
+    const response = await admin.messaging().sendMulticast({
+      tokens,
       notification: {
         title,
         body: message,
       },
       data,
-    };
-
-    const options = {
-      priority: 'high',
-      timeToLive: 60 * 60 * 24, // 24 hours
-    };
-
-    const response = await admin.messaging().sendToDevice(tokens, payload, options);
-    console.log('✅ Firebase Raw Response:', response); // <-- CHECK THIS LOG
+      android: {
+        priority: 'high',
+        ttl: 86400, // 24 hours in seconds
+      },
+      apns: {
+        headers: {
+          'apns-expiration': `${Math.floor(Date.now() / 1000) + 86400}`, // 24 hours from now
+        },
+      },
+    });
+    
+    console.log('✅ Firebase Raw Response:', response);
     console.log(`- Success count: ${response.successCount}`);
     console.log(`- Failure count: ${response.failureCount}`);
     
     // Check for failures and handle them
     if (response.failureCount > 0) {
       const failedTokens = [];
-      response.results.forEach((result, index) => {
-        const error = result.error;
-        if (error) {
+      response.responses.forEach((result, index) => {
+        if (!result.success) {
           failedTokens.push(tokens[index]);
-          console.error('Failure sending notification to', tokens[index], error);
+          console.error('Failure sending notification to', tokens[index], result.error);
         }
       });
       return { success: true, failedTokens };

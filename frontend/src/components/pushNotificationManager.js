@@ -1,6 +1,6 @@
 // components/PushNotificationManager.js
 import React, { useState, useEffect } from 'react';
-import { requestPermissionAndGetToken, onMessageListener } from '../services/pushNotification';
+import { requestPermissionAndGetToken, onMessageListener, unregisterPushToken } from '../services/pushNotification';
 import { toast } from 'react-toastify';
 
 const PushNotificationManager = () => {

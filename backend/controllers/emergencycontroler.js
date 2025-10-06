@@ -2,6 +2,7 @@ const Emergency = require("../models/emergency");
 const User = require("../models/user");
 const Notification = require("../models/notification");
 const { sendPushNotification } = require('../services/pushNotification');
+const mongoose=require('mongoose');
 const axios = require("axios");
 let io = null;
 try {
@@ -233,13 +234,15 @@ const getEmergency = async (req, res) => {
 const respondToEmergency = async (req, res) => {
   try {
     const { emergencyId } = req.params;
-    const userId = req.userId;
+  const userId = req.user._id;
 
     if (!mongoose.Types.ObjectId.isValid(emergencyId)) {
       return errorResponse(res, "Invalid emergency ID", 400);
     }
 
-    const emergency = await Emergency.findById(emergencyId);
+  const emergency = await Emergency.findById(emergencyId)
+  .populate("createdBy", "name")
+  .populate("responders.userId", "name phone currentLocation")  // This is incorrect
     if (!emergency) return errorResponse(res, "Emergency not found", 404);
 
     if (["resolved", "cancelled"].includes(emergency.status)) {
@@ -247,9 +250,9 @@ const respondToEmergency = async (req, res) => {
     }
 
     // Responder logic
-    let responder = emergency.responders.find(
-      (r) => r.userId.toString() === userId
-    );
+  let responder = emergency.responders.find(
+  (r) => r.userId && r.userId._id.toString() === userId
+);
 
     if (responder) {
       if (responder.status === "notified") {
@@ -283,9 +286,8 @@ const respondToEmergency = async (req, res) => {
         const [emLng, emLat] = emergency.location.coordinates;
 
         const dirRes = await axios.get(
-          `https://maps.googleapis.com/maps/api/directions/json?origin=${lat},${lng}&destination=${emLat},${emLng}&key=${AIzaSyBX2dkhTiyuh0Yji3uTeiuFy51BaeqXgCk}}`
-        );
-
+  `https://maps.googleapis.com/maps/api/directions/json?origin=${lat},${lng}&destination=${emLat},${emLng}&key=${"AIzaSyBX2dkhTiyuh0Yji3uTeiuFy51BaeqXgCk"}`
+);
         const route = dirRes.data?.routes?.[0];
         if (route && route.legs?.[0]) {
           const etaSeconds = route.legs[0].duration.value;
@@ -318,15 +320,18 @@ const respondToEmergency = async (req, res) => {
     });
 
     // Emit sockets
-    emitToUser(emergency.createdBy, RESPONDER_ADDED, {
-      emergencyId: emergency._id,
-      responder: {
-        _id: userId,
-        status: responder ? responder.status : "en_route",
-      },
-    });
+  
 
-    emitToEmergency(emergencyId, RESPONDER_UPDATED, {
+// Then use the correct event name in emitToUser
+emitToUser(emergency.createdBy._id, EVENTS.RESPONDER_ADDED, {
+  emergencyId: emergency._id,
+  responder: {
+    _id: userId,
+    status: responder ? responder.status : "en_route",
+  },
+});
+
+    emitToEmergency(emergencyId, EVENTS.RESPONDER_UPDATED, {
       emergencyId: emergency._id,
       responder: {
         _id: userId,

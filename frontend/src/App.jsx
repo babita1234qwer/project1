@@ -7,12 +7,14 @@ import { useEffect } from 'react';
 import Signup from "./pages/signup";
 // App.js or your routing file
 import NotificationsPage from './pages/Notifications';
+import EmergencyDetail from './pages/EmergencyDetails';
 //import NotificationToast from './components/NotificationToast';
 
 import EmergencyRequest from "./pages/EmergencyRequest.jsx";
 import EmergencyForm from './pages/EmergencyForm.jsx';
  import EmergenciesPage from "./pages/EmergenciesPage.jsx";
 import EmergencyMapPage from './pages/EmergencyMapPage';
+import AboutPage from "./pages/AboutEmergenciesPage.jsx"; // Import the new component
 import { connectSocket, disconnectSocket } from './services/socket';
 
 function App(){
@@ -52,6 +54,8 @@ useEffect(() => {
 <Route path="/emergency/map" element={<EmergencyMapPage />} />
 // Add this route to your router
 <Route path="/notifications" element={<NotificationsPage />} />
+        <Route path="/about" element={<AboutPage />} />
+<Route path="/emergency/:emergencyId" element={<EmergencyDetail />} />
     </Routes>
   )
 }

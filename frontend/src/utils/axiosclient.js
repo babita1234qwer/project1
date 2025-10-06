@@ -1,3 +1,4 @@
+
 import axios from "axios";
 const isLocal = window.location.hostname === "localhost";
 
@@ -9,6 +10,7 @@ const axiosClient =  axios.create({
         'Content-Type': 'application/json'
     }
 });
+
 
 
 export default axiosClient;

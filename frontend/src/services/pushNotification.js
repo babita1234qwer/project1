@@ -1,7 +1,7 @@
 // services/pushNotification.js
-import { getToken } from 'firebase/messaging';
+import { getToken, onMessage } from 'firebase/messaging';
 import { messaging } from '../firebase';
-import axiosClient from '../axiosClient'; // Import your custom axios instance
+import axiosClient from '../axiosClient';
 
 // Register push token
 export const registerPushToken = async (token) => {
@@ -9,7 +9,6 @@ export const registerPushToken = async (token) => {
     const response = await axiosClient.post(
       '/push-notifications/register',
       { token }
-      // No need for Authorization header as withCredentials handles it
     );
     return response.data;
   } catch (error) {
@@ -24,7 +23,6 @@ export const unregisterPushToken = async (token) => {
     const response = await axiosClient.post(
       '/push-notifications/unregister',
       { token }
-      // No need for Authorization header as withCredentials handles it
     );
     return response.data;
   } catch (error) {
@@ -64,7 +62,10 @@ export const requestPermissionAndGetToken = async () => {
 // Handle incoming messages
 export const onMessageListener = () =>
   new Promise((resolve) => {
-    messaging.onMessage((payload) => {
+    const unsubscribe = onMessage(messaging, (payload) => {
       resolve(payload);
     });
+    
+    // Return unsubscribe function for cleanup
+    return unsubscribe;
   });

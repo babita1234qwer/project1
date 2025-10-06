@@ -1,35 +1,39 @@
-// routes/pushNotifications.js
 const express = require('express');
 const notificationrouter = express.Router();
 const User = require('../models/user');
 const { sendPushNotification } = require('../services/pushNotification');
 
+// Helper functions for consistent responses
 function successResponse(res, data, message = "Success", status = 200) {
-    return res.status(status).json({
-      success: true,
-      message,
-      data,
-    });
-  }
-  
-  function errorResponse(res, message = "Error", status = 500, error = null) {
-    return res.status(status).json({
-      success: false,
-      message,
-      error: error?.message || null,
-    });
-  }
+  return res.status(status).json({
+    success: true,
+    message,
+    data,
+  });
+}
+
+function errorResponse(res, message = "Error", status = 500, error = null) {
+  return res.status(status).json({
+    success: false,
+    message,
+    error: error?.message || null,
+  });
+}
+
 // Register a push token for a user
+// NOTE: Now requires 'userId' in the request body.
 notificationrouter.post('/register', async (req, res) => {
   try {
-    const { token } = req.body;
-    const userId = req.user._id;
+    const { token, userId } = req.body;
 
     if (!token) {
       return errorResponse(res, 'Token is required', 400);
     }
+    if (!userId) {
+      return errorResponse(res, 'User ID is required', 400);
+    }
 
-    // Find the user
+    // Find the user by the ID from the request body
     const user = await User.findById(userId);
     if (!user) {
       return errorResponse(res, 'User not found', 404);
@@ -41,7 +45,7 @@ notificationrouter.post('/register', async (req, res) => {
     );
 
     if (existingTokenIndex !== -1) {
-      // Update the existing token
+      // Update the existing token's last used timestamp
       user.pushTokens[existingTokenIndex].lastUsed = Date.now();
     } else {
       // Add the new token
@@ -61,22 +65,25 @@ notificationrouter.post('/register', async (req, res) => {
 });
 
 // Unregister a push token for a user
+// NOTE: Now requires 'userId' in the request body.
 notificationrouter.post('/unregister', async (req, res) => {
   try {
-    const { token } = req.body;
-    const userId = req.user._id;
+    const { token, userId } = req.body;
 
     if (!token) {
       return errorResponse(res, 'Token is required', 400);
     }
+    if (!userId) {
+      return errorResponse(res, 'User ID is required', 400);
+    }
 
-    // Find the user
+    // Find the user by the ID from the request body
     const user = await User.findById(userId);
     if (!user) {
       return errorResponse(res, 'User not found', 404);
     }
 
-    // Remove the token
+    // Remove the token from the user's list
     user.pushTokens = user.pushTokens.filter((t) => t.token !== token);
     await user.save();
 
@@ -87,7 +94,8 @@ notificationrouter.post('/unregister', async (req, res) => {
   }
 });
 
-// Send a push notification (admin only)
+// Send a push notification
+// NOTE: No authentication middleware. Anyone can call this endpoint.
 notificationrouter.post('/send', async (req, res) => {
   try {
     const { userIds, title, message, data } = req.body;
@@ -100,12 +108,12 @@ notificationrouter.post('/send', async (req, res) => {
       return errorResponse(res, 'Title and message are required', 400);
     }
 
-    // Find the users
+    // Find all specified users and retrieve their push tokens
     const users = await User.find({ _id: { $in: userIds } }).select(
       'pushTokens'
     );
 
-    // Collect all tokens
+    // Collect all unique tokens from the found users
     const tokens = [];
     users.forEach((user) => {
       user.pushTokens.forEach((tokenObj) => {
@@ -117,15 +125,15 @@ notificationrouter.post('/send', async (req, res) => {
       return errorResponse(res, 'No push tokens found for the specified users', 404);
     }
 
-    // Send the notification
+    // Send the notification using the service
     const result = await sendPushNotification(tokens, title, message, data);
 
     if (!result.success) {
       return errorResponse(res, 'Failed to send push notification', 500, result.error);
     }
 
-    // Remove failed tokens
-    if (result.failedTokens.length > 0) {
+    // If any tokens failed, remove them from the database to prevent future errors
+    if (result.failedTokens && result.failedTokens.length > 0) {
       await User.updateMany(
         { _id: { $in: userIds } },
         { $pull: { pushTokens: { token: { $in: result.failedTokens } } } }
