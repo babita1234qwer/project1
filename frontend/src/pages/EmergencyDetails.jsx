@@ -18,6 +18,9 @@ import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
+// --- NEW: Import the ChatBox component ---
+import ChatBox from '../components/ChatBox';
+
 // --- Fix for default markers ---
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -95,46 +98,35 @@ const EmergencyDetails = () => {
     };
   }, [isTracking]);
 
-  // --- useEffect to fetch directions from OSRM ---
   // --- UPDATED useEffect to fetch directions from OSRM ---
-useEffect(() => {
-  if (isTracking && userLocation && emergency?.location?.coordinates) {
-    const fetchDirections = async () => {
-      try {
-        const [userLat, userLng] = userLocation; // Browser gives [lat, lng]
-        // --- Assume API gives [lng, lat] ---
-        const [emLng, emLat] = emergency.location.coordinates;
+  useEffect(() => {
+    if (isTracking && userLocation && emergency?.location?.coordinates) {
+      const fetchDirections = async () => {
+        try {
+          const [userLat, userLng] = userLocation; // Browser gives [lat, lng]
+          // --- Assume API gives [lng, lat] ---
+          const [emLng, emLat] = emergency.location.coordinates;
 
-        // --- DEBUGGING LOGS ---
-        console.log(">>> Fetching Directions <<<");
-        console.log("User Location (lat, lng):", userLat, userLng);
-        console.log("Emergency Location (lat, lng):", emLat, emLng);
-        console.log("Emergency Location Raw Data:", emergency.location.coordinates);
+          const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${emLng},${emLat}?overview=full&geometries=polyline`;
+          
+          const response = await axios.get(osrmUrl);
+          
+          if (response.data.code !== 'Ok') {
+            throw new Error(`OSRM Error: ${response.data.message || 'Could not fetch directions'}`);
+          }
+          
+          const decodedPoints = decodePolyline(response.data.routes[0].geometry);
+          setRoutePoints(decodedPoints);
 
-        // OSRM API URL requires [longitude,latitude] order
-        const osrmUrl = `https://router.project-osrm.org/route/v1/driving/${userLng},${userLat};${emLng},${emLat}?overview=full&geometries=polyline`;
-        
-        // --- DEBUGGING LOG ---
-        console.log("Final OSRM URL:", osrmUrl);
-
-        const response = await axios.get(osrmUrl);
-        
-        if (response.data.code !== 'Ok') {
-          throw new Error(`OSRM Error: ${response.data.message || 'Could not fetch directions'}`);
+        } catch (err) {
+          console.error("Failed to fetch directions:", err);
+          setDirectionsError(err.message || 'An unknown error occurred while fetching directions.');
         }
-        
-        const decodedPoints = decodePolyline(response.data.routes[0].geometry);
-        setRoutePoints(decodedPoints);
+      };
 
-      } catch (err) {
-        console.error("Failed to fetch directions:", err);
-        setDirectionsError(err.message || 'An unknown error occurred while fetching directions.');
-      }
-    };
-
-    fetchDirections();
-  }
-}, [userLocation, isTracking, emergency]);
+      fetchDirections();
+    }
+  }, [userLocation, isTracking, emergency]);
   
 
   const hasResponded = emergency?.responders?.some((responder) =>
@@ -215,6 +207,23 @@ useEffect(() => {
           </div>
         </CardBody>
       </Card>
+
+      {/* --- NEW: Chat Section --- */}
+      {/* Show chat only if the user is the creator or a responder */}
+      {(emergency?.reporter?._id === currentUserId || hasResponded) && (
+          <Card className="mt-8">
+              <CardHeader>
+                  <h2>Coordinate with Responders</h2>
+              </CardHeader>
+              <Divider />
+              <CardBody>
+                  <p className="text-sm text-gray-600 mb-4">
+                      Use this chat to communicate important details with the responders.
+                  </p>
+                  <ChatBox emergencyId={emergencyId} />
+              </CardBody>
+          </Card>
+      )}
 
       {/* --- Map Section --- */}
       <Card className="mt-8">

@@ -1,9 +1,8 @@
 const express = require('express');
-const app = express();
 const http = require('http');
 const redisclient = require("./config/redis");
-const locationuser = require('./routes/location');
-const socket = require('./config/socket'); // Import the socket utility
+// --- REMOVED: The old socket utility is no longer needed ---
+// const socket = require('./config/socket'); 
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
 const main = require('./config/db');
@@ -13,55 +12,40 @@ const authrouter = require('./routes/userauth');
 const emergencyRouter = require('./routes/emergency');
 const notificationRouter = require("./routes/notification");
 const locationrouter=require("./routes/location");
-const notificationrouter=require("./routes/pushNotification")
+const notificationrouter=require("./routes/pushNotification");
+const Reviewrouter = require('./routes/websiteReviewRoutes');
+const Donationrouter = require('./routes/donationRoutes');
+// --- This import is correct and stays ---
+const { initializeSocket } = require('./socket/socketServer');
 
+const app = express();
 const server = http.createServer(app);
 
-// Initialize socket.io
-const io = socket.init(server);
+// --- REMOVED: The old socket initialization and event handlers ---
+// This logic is now handled inside the new `initializeSocket` function
+// const io = socket.init(server);
+// io.on('connection', (socket) => { ... });
+// global.io = io;
 
-// Set up socket.io connection handling
-io.on('connection', (socket) => {
-  console.log('A user connected with ID:', socket.id);
-  
-  // Join user-specific room
-  socket.on('join-user-room', (userId) => {
-    socket.join(`user:${userId}`);
-    console.log(`User ${userId} joined their room`);
-  });
-  
-  // Join emergency-specific room
-  socket.on('join-emergency-room', (emergencyId) => {
-    socket.join(`emergency:${emergencyId}`);
-    console.log(`User joined emergency ${emergencyId} room`);
-  });
-  
-  socket.on('disconnect', () => {
-    console.log('User disconnected with ID:', socket.id);
-  });
-});
-
-// Make io globally accessible if needed
-global.io = io;
+// --- ADDED: Initialize the new, more powerful Socket.IO server ---
+// This single line replaces all the old socket logic above
+initializeSocket(server);
 
 app.use(cors({
   origin: ['http://localhost:5173'],
   credentials: true 
 }));
 
-
 app.use(express.json());
 app.use(cookieparser());
-
-
-
-
 
 app.use('/user', authrouter);
 app.use('/emergencies', emergencyRouter);
 app.use('/location', locationrouter);
 app.use("/notifications",notificationRouter);
 app.use('/pushnotification',notificationrouter);
+app.use('/reviews', Reviewrouter);
+app.use('/donation', Donationrouter);
 
 const initialiseconnection = async () => {
   try {

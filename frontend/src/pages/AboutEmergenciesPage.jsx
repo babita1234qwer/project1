@@ -1,9 +1,14 @@
 // src/pages/AboutPage.jsx
 
 import { Link } from 'react-router-dom';
+import { useState } from 'react'; // 1. Import useState
 import { Button } from '@heroui/react';
+// ... other imports
+import DonationButton from '../components/DonationButton'; // Import the new component
+import WebsiteReviewForm from '../components/WebsiteReviewForm';
+import WebsiteReviewList from '../components/WebsiteReviewList';
 
-// Simple SVG Icons for visual appeal
+// Simple SVG Icons for visual appeal (no changes)
 const ReportIcon = () => (
   <svg className="w-12 h-12 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
 );
@@ -18,6 +23,25 @@ const ResolveIcon = () => (
 
 
 const AboutPage = () => {
+  // 2. Add state to trigger a refresh of the review list
+  const [refreshKey, setRefreshKey] = useState(0);
+  
+  // --- NEW: State for donation thank you message ---
+  const [showThankYou, setShowThankYou] = useState(false);
+
+  // 3. Add function to be called when a review is submitted
+  const handleReviewSubmitted = () => {
+    // Incrementing the key will force the WebsiteReviewList to re-fetch its data
+    setRefreshKey(prev => prev + 1);
+  };
+
+  // --- NEW: Function to handle successful donation ---
+  const handleDonationSuccess = () => {
+    setShowThankYou(true);
+    // Optionally hide the message after a few seconds
+    setTimeout(() => setShowThankYou(false), 5000);
+  };
+
   return (
     <div className="bg-gray-50">
       {/* Hero Section */}
@@ -107,9 +131,58 @@ const AboutPage = () => {
         </div>
       </section>
 
+      {/* --- NEW: Support Us Section --- */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-4xl mx-auto text-center">
+          <h2 className="text-3xl font-bold text-gray-800 mb-6">Support HelpNet</h2>
+          <p className="text-lg text-gray-600 leading-relaxed mb-8">
+            HelpNet is and always will be a free service for everyone. However, running and maintaining this platform comes with costs for servers, development, and security. 
+            Your generous donation helps us keep the lights on and continue our mission to connect communities in crisis. Every contribution, no matter the size, makes a real difference.
+          </p>
+          
+          {showThankYou && (
+            <div className="mb-6 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg">
+              <strong>Thank you!</strong> Your donation means a lot to us and to the communities we serve.
+            </div>
+          )}
+
+          <div className="flex justify-center items-center gap-4">
+            <DonationButton amount={200} onSuccess={handleDonationSuccess} />
+            <DonationButton amount={500} onSuccess={handleDonationSuccess} />
+            <DonationButton amount={1000} onSuccess={handleDonationSuccess} />
+          </div>
+          <p className="text-sm text-gray-500 mt-4">Choose an amount or support us with a custom donation.</p>
+        </div>
+      </section>
+
+      {/* --- Community Feedback Section --- */}
+      <section className="py-16 px-6 bg-white">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-800 text-center mb-12">Community Feedback</h2>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
+            {/* Review Form */}
+            <div>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-6">Share Your Experience</h3>
+              <p className="text-gray-900 mb-6">
+                Your feedback helps us improve and grow. Let us know what you think about HelpNet.
+              </p>
+              {/* 4. Pass the handler function to the form */}
+              <WebsiteReviewForm onReviewSubmitted={handleReviewSubmitted} />
+            </div>
+            
+            {/* Review List */}
+            <div className='text-gray-800'>
+              <h3 className="text-2xl font-semibold text-gray-800 mb-6">Recent Reviews</h3>
+              {/* 5. Pass the refreshKey to the list */}
+              <WebsiteReviewList key={refreshKey} />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Call to Action Section */}
-      <section className="bg-blue-600 py-16 px-6 text-center">
-        <div className="max-w-4xl mx-auto">
+      <section className="bg-blue-600 py-16 px-6 text-center ">
+        <div className="max-w-4xl mx-auto ">
           <h2 className="text-3xl font-bold text-white mb-6">Be a Part of the Solution</h2>
           <p className="text-xl text-blue-100 mb-8">
             Whether you need help or want to offer it, your contribution makes a real difference.
