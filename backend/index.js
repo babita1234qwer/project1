@@ -15,6 +15,7 @@ const locationrouter=require("./routes/location");
 const notificationrouter=require("./routes/pushNotification");
 const Reviewrouter = require('./routes/websiteReviewRoutes');
 const Donationrouter = require('./routes/donationRoutes');
+const { initNotificationSocket } = require('./controllers/notificationcontroller');
 // --- This import is correct and stays ---
 const { initializeSocket } = require('./socket/socketServer');
 
@@ -30,6 +31,7 @@ const server = http.createServer(app);
 // --- ADDED: Initialize the new, more powerful Socket.IO server ---
 // This single line replaces all the old socket logic above
 initializeSocket(server);
+
 
 app.use(cors({
   origin: ['http://localhost:5173'],

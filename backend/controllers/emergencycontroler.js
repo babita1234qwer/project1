@@ -1,16 +1,11 @@
+
 const Emergency = require("../models/emergency");
 const User = require("../models/user");
 const Notification = require("../models/notification");
 const { sendPushNotification } = require('../services/pushNotification');
 const mongoose=require('mongoose');
 const axios = require("axios");
-let io = null;
-try {
-  io = require('../socket').io;
-} catch (e) {
-  // fallback: try to get from global if set
-  io = global.io || null;
-}
+const {getIO}=require("../socket/socketServer");
 function successResponse(res, data, message = "Success", status = 200) {
   return res.status(status).json({
     success: true,
@@ -18,6 +13,7 @@ function successResponse(res, data, message = "Success", status = 200) {
     data,
   });
 }
+
 
 function errorResponse(res, message = "Error", status = 500, error = null) {
   return res.status(status).json({
@@ -27,16 +23,21 @@ function errorResponse(res, message = "Error", status = 500, error = null) {
   });
 }
 const emitToUser = (userId, event, data) => {
+  const io=getIO();
   if (io) {
-    io.to(`user:${userId}`).emit(event, data);
+    const room = `user:${String(userId)}`;
+    io.to(room).emit(event, data);
   }
 };
 const emitToEmergency = (emergencyId, event, data) => {
+  const io=getIO();
   if (io) {
-    io.to(`emergency:${emergencyId}`).emit(event, data);
+    const room = `emergency:${String(emergencyId)}`;
+    io.to(room).emit(event, data);
   }
 };
 const emitToAll = (event, data) => {
+  const io=getIO();
   if (io) {
     io.emit(event, data);
   }
@@ -48,6 +49,7 @@ const EVENTS={
     RESPONDER_UPDATED:"responderUpdated",
     EMERGENCY_STATUS_UPDATED:"emergencyStatusUpdated",
     EMERGENCY_RESOLVED:"emergencyResolved",
+    NOTIFICATION: "notification",
 }
 
 
@@ -90,20 +92,20 @@ const createEmergency = async (req, res) => {
     const nearbyUsers = await User.find({
       _id: { $ne: userId },
       availabilityStatus: true,
-      "currentLocation.lastUpdated": {
-        $gte: new Date(Date.now() - 30 * 60 * 1000),
-      },
+     // "currentLocation.lastUpdated": {
+       // $gte: new Date(Date.now() - 30 * 60 * 1000),
+     // },
       "currentLocation.coordinates": {
         $near: {
           $geometry: {
             type: "Point",
             coordinates: [parseFloat(longitude), parseFloat(latitude)],
           },
-          $maxDistance: 5000,
+          $maxDistance: 50000,
         },
       },
     }).select("_id name pushTokens");
-
+console.log("nearbyUsers:",   nearbyUsers);
     // Create notifications
     const notifications = nearbyUsers.map((user) => ({
       userId: user._id,
@@ -111,7 +113,7 @@ const createEmergency = async (req, res) => {
       type: "emergency_alert",
       title: `${emergencyType.toUpperCase()} EMERGENCY NEARBY`,
   message: `Someone needs help with a ${emergencyType} emergency near ${address}. Can you respond?`    }));
-
+console.log("notifications:", notifications);
     if (notifications.length > 0) {
       await Notification.insertMany(notifications);
     }
@@ -181,6 +183,7 @@ const getActiveEmergencies = async (req, res) => {
     return errorResponse(res, "Failed to retrieve emergencies", 500, error);
   }
 };
+
 const getNearbyEmergencies = async (req, res) => {
   try {
     const { longitude, latitude, maxDistance = 5000 } = req.query;

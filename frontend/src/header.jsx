@@ -8,6 +8,8 @@ import { logoutUser } from './authslice';
 import { useLocation } from 'react-router-dom';
 import { Badge } from "@heroui/react";
 import axiosClient from "./utils/axiosclient";
+import socket from "./utils/socket"; 
+import {Alert} from "@heroui/react";
 
 import {
   Navbar,
@@ -57,6 +59,16 @@ export const HelpNetLogo = () => (
     />
   </svg>
 );
+const EVENTS={
+    NEW_EMERGENCY:"newEmergency",
+    EMERGENCY_CREATED:"emergencyCreated",
+    RESPONDER_ADDED:"responderAdded",
+    RESPONDER_UPDATED:"responderUpdated",
+    EMERGENCY_STATUS_UPDATED:"emergencyStatusUpdated",
+    EMERGENCY_RESOLVED:"emergencyResolved",
+    NOTIFICATION: "notification",
+}
+
 
 export default function NavbarHelpNet() {
   const location = useLocation();
@@ -70,24 +82,66 @@ export default function NavbarHelpNet() {
     dispatch(logoutUser());
     setSolvedProblems([]);
   };
+useEffect(() => {
+    // Initialize socket connection
+    socket.connect();
+    
+    if (isAuthenticated && user?._id) {
+      console.log("Joining socket room with ID:", user._id);
+      socket.emit("joinRoom", { userId: user._id });
+
+      // Listen for generic notifications
+      socket.on(EVENTS.NOTIFICATION, (notification) => {
+        console.log("🔔 Received notification via socket:", notification); 
+        setNotifications((prev) => [notification, ...prev]);
+        setUnreadCount((prev) => prev + 1);
+      });
+
+      // Listen for new emergencies
+      socket.on(EVENTS.NEW_EMERGENCY, (data) => {
+        console.log("🚨 Received new emergency:", data);
+        // You might want to handle this differently
+        // For now, we'll create a notification object
+        const emergencyNotification = {
+          _id: `emergency-${data.emergency._id}`,
+          title: `${data.emergency.emergencyType.toUpperCase()} EMERGENCY NEARBY`,
+          message: data.emergency.description,
+          createdAt: data.emergency.createdAt,
+          read: false,
+          type: 'emergency_alert',
+          emergencyId: data.emergency._id
+        };
+        
+        setNotifications((prev) => [emergencyNotification, ...prev]);
+        setUnreadCount((prev) => prev + 1);
+      });
+    }
+
+    // Clean up when component unmounts or user logs out
+    return () => {
+      socket.off(EVENTS.NOTIFICATION);
+      socket.off(EVENTS.NEW_EMERGENCY);
+      if (!isAuthenticated) {
+        socket.disconnect();
+      }
+    };
+  }, [isAuthenticated, user?._id]);
+useEffect(() => {
+  if (isAuthenticated) {
+    fetchNotifications();  // Initial fetch
+
+    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
+
+    return () => clearInterval(interval); // Clean up interval
+  }
+}, [isAuthenticated]);
 
   // Fetch notifications
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchNotifications();
-      
-      // Set up polling for new notifications
-      const interval = setInterval(fetchNotifications, 30000); // Poll every 30 seconds
-      
-      return () => clearInterval(interval);
-    }
-  }, [isAuthenticated]);
-
   
   // The CORRECTED function
 const fetchNotifications = async () => {
   try {
-    const response = await axiosClient.get('/notifications');
+    const response = await axiosClient.get('/notifications/get');
     
     // The actual array of notifications is in response.data.data
     const notificationsArray = response.data.data;
@@ -196,49 +250,56 @@ const fetchNotifications = async () => {
             </Link>
           </NavbarItem>
         </NavbarContent>
-
-        {/* Right: Notifications + Profile Dropdown */}
-        <NavbarContent as="div" justify="end" className="flex-shrink-0 gap-2">
-          {isAuthenticated && (
-            <Dropdown placement="bottom-end">
-              <DropdownTrigger>
-                <Badge color="danger" content={unreadCount} isInvisible={unreadCount === 0}>
-                  <Button isIconOnly color="transparent" className="text-white" aria-label="Notifications">
-                    <NotificationBell />
-                  </Button>
-                </Badge>
-              </DropdownTrigger>
-              
-              <DropdownMenu aria-label="Notifications" variant="flat" className="max-w-80">
-                <DropdownItem key="header" className="opacity-100">
-                  <p className="font-semibold">Notifications</p>
+ {/* Right: Notifications + Profile Dropdown */}
+      <NavbarContent as="div" justify="end" className="flex-shrink-0 gap-2">
+        {isAuthenticated && (
+          <Dropdown placement="bottom-end">
+            <DropdownTrigger>
+              <Badge color="danger" content={unreadCount} isInvisible={unreadCount === 0}>
+                <Button isIconOnly color="transparent" className="text-white" aria-label="Notifications">
+                  <NotificationBell />
+                </Button>
+              </Badge>
+            </DropdownTrigger>
+            
+            <DropdownMenu aria-label="Notifications" variant="flat" className="max-w-80">
+              <DropdownItem key="header" className="opacity-100">
+                <p className="font-semibold">Notifications</p>
+              </DropdownItem>
+                    
+              {notifications.length === 0 ? (
+                <DropdownItem key="empty" className="opacity-100">
+                  <Alert color="default" variant="faded" title="No notifications" description="You're all caught up!" />
                 </DropdownItem>
-                
-                {notifications.length === 0 ? (
-                  <DropdownItem key="empty" className="opacity-100">
-                    <p className="text-center py-2">No new notifications</p>
+              ) : (
+                notifications.slice(0, 5).map((notification) => (
+                  <DropdownItem 
+                    key={notification._id} 
+                    className="opacity-100 p-0"
+                    onClick={() => markAsRead(notification._id)}
+                  >
+                    <Alert 
+                      color={!notification.read ? "warning" : "success"} 
+                      variant="solid" 
+                      title={notification.title}
+                      description={
+                        <div className='border-t border-gray-300 mt-1 pt-1'>
+                          <p className='text-xs text-gray-00'>{notification.message}</p>
+                          <p className="text-xs text-gray-900 mt-1">
+                            {new Date(notification.createdAt).toLocaleString()}
+                          </p>
+                        </div>
+                      }
+                      className="w-full cursor-pointer"
+                    />
                   </DropdownItem>
-                ) : (
-                  notifications.slice(0, 5).map((notification) => (
-                    <DropdownItem 
-                      key={notification._id} 
-                      className={`opacity-100 ${!notification.read ? 'bg-blue-50' : ''}`}
-                      onClick={() => markAsRead(notification._id)}
-                    >
-                      <div className="flex flex-col gap-1">
-                        <p className="font-medium text-sm">{notification.title}</p>
-                        <p className="text-xs text-gray-600">{notification.message}</p>
-                        <p className="text-xs text-gray-400">
-                          {new Date(notification.createdAt).toLocaleString()}
-                        </p>
-                      </div>
-                    </DropdownItem>
-                  ))
-                )}
-              </DropdownMenu>
-            </Dropdown>
-          )}
-          
+                ))
+              )}
+            </DropdownMenu>
+          </Dropdown>
+        )}
+   
+
           {isAuthenticated ? (
             <Dropdown placement="bottom-end">
               <DropdownTrigger>
