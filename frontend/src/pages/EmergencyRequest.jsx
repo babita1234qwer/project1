@@ -97,7 +97,7 @@ function EmergencyRequest() {
       };
       
       console.log("📦 Payload being sent:", payload);
-      await axiosClient.post(`${API_URL}/emergencies/create`, payload);
+      await axiosClient.post('/emergencies/create', payload);
       alert('Emergency submitted successfully!');
     } catch (err) {
       alert(err.response?.data?.message || err.message || "Submission failed");
