@@ -36,7 +36,7 @@ initializeSocket(server);
 
 
 app.use(cors({
-  origin: ['http://localhost:5173'],
+  origin: ['http://localhost:5173','https://reliable-dasik-5b9a63.netlify.app'],
   credentials: true 
 }));
 
