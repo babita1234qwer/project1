@@ -14,6 +14,7 @@ import {
   Divider
 } from "@heroui/react";
 import axiosClient from '../utils/axiosclient';
+const API_URL = import.meta.env.VITE_API_URL;
 
 const EmergencyForm = () => {
   const [formData, setFormData] = useState({
@@ -48,7 +49,7 @@ const EmergencyForm = () => {
     setIsSubmitting(true);
     setSubmitError('');
     try {
-      const response = await axiosClient.post('/api/emergencies', formData);
+      const response = await axiosClient.post(`${API_URL}/api/emergencies`, formData);
       setSubmitSuccess(true);
       setFormData({
         emergencyType: '',

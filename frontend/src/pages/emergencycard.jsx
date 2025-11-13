@@ -1,9 +1,9 @@
 import axiosClient from "../utils/axiosclient";
-
+const API_URL = import.meta.env.VITE_API_URL;
 function EmergencyCard({ emergency }) {
   const handleRespond = async () => {
     try {
-      await axiosClient.post(`/emergency/${emergency._id}/respond`);
+      await axiosClient.post(`${API_URL}/emergency/${emergency._id}/respond`);
       alert("✅ You have responded to this emergency!");
     } catch (err) {
       alert(err.response?.data?.message || "❌ Failed to respond");

@@ -4,6 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useDispatch } from 'react-redux';
 import axiosClient from '../utils/axiosclient';
 import { useState, useEffect } from 'react';
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 const emergencySchema = z.object({
   emergencyType: z.string().min(1, 'Type is required'),
@@ -95,7 +97,7 @@ function EmergencyRequest() {
       };
       
       console.log("📦 Payload being sent:", payload);
-      await axiosClient.post('/emergencies/create', payload);
+      await axiosClient.post(`${API_URL}/emergencies/create`, payload);
       alert('Emergency submitted successfully!');
     } catch (err) {
       alert(err.response?.data?.message || err.message || "Submission failed");

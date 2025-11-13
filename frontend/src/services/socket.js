@@ -1,7 +1,7 @@
 // services/socket.js
 import io from 'socket.io-client';
 
-const socket = io( 'http://localhost:5173');
+const socket = io( 'https://project1-pla1.onrender.com/');
 
 export const connectSocket = (userId) => {
   socket.emit('authenticate', userId);

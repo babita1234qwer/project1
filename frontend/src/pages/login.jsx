@@ -49,7 +49,7 @@ function Login() {
       {/* Login Form with Maximum Transparency */}
       <div className="bg-white/[0.02] backdrop-blur-xs shadow-lg rounded-2xl p-10 w-full max-w-md border border-white/[0.05] relative z-10">
         <h1 className="text-4xl font-bold text-white text-center mb-2" style={{ textShadow: '0 0 10px rgba(0,0,0,0.8), 0 0 20px rgba(0,0,0,0.5)' }}>
-          <span className="inline-block animate-bounce">🚀</span> CodeCrack
+          <span className="inline-block animate-bounce">🚀</span> Helpnet
         </h1>
         <h2 className="text-lg text-gray-200 text-center mb-6" style={{ textShadow: '0 0 8px rgba(0,0,0,0.8)' }}>
           Welcome back! Please login to continue.

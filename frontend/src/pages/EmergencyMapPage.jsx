@@ -9,6 +9,8 @@ Spinner,
 Button
 } from "@heroui/react";
 import axiosClient from '../utils/axiosclient';
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 // Helper function to get an icon for each emergency type
 const getEmergencyIcon = (type) => {

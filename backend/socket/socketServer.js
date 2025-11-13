@@ -7,40 +7,48 @@ const User = require('../models/user');
 let io;
 
 const initializeSocket = (server) => {
+  // Allowed origins: dev and production
+  const allowedOrigins = [
+    process.env.FRONTEND_URL_DEV || "http://localhost:5173",
+    process.env.FRONTEND_URL_PROD || "https://reliable-dasik-5b9a63.netlify.app"
+  ];
+
   io = new Server(server, {
     cors: {
-      origin: "http://localhost:5173",
-      methods: ["GET", "POST"]
+      origin: allowedOrigins,
+      methods: ["GET", "POST"],
+      credentials: true
     }
   });
 
   io.on('connection', (socket) => {
     console.log('A user connected:', socket.id);
 
-    // Join user-specific room for notifications
+    // ----- User-specific notifications -----
     socket.on('joinRoom', ({ userId }) => {
       if (!userId) return;
-      const room = `user:${userId.toString()}`;
+      const room = `user:${userId}`;
       socket.join(room);
       console.log(`✅ User ${userId} joined room: ${room}`);
     });
 
-    // Join emergency room for chat
+    // ----- Emergency chat rooms -----
     socket.on('joinEmergencyRoom', async ({ emergencyId, userId }) => {
       try {
         const emergency = await Emergency.findById(emergencyId);
-        
         if (!emergency) {
           socket.emit('error', 'Emergency not found.');
           return;
         }
 
-        const reporterId = emergency.reporter ? emergency.reporter.toString() : null;
+        const reporterId = emergency.reporter?.toString();
         const isCreator = reporterId === userId;
-        
+
         let isResponder = false;
-        if (emergency.responders && Array.isArray(emergency.responders)) {
-          isResponder = emergency.responders.some(r => r.userId && r.userId.toString() === userId);
+        if (Array.isArray(emergency.responders)) {
+          isResponder = emergency.responders.some(
+            r => r.userId?.toString() === userId
+          );
         }
 
         if (!isCreator && !isResponder) {
@@ -48,8 +56,9 @@ const initializeSocket = (server) => {
           return;
         }
 
-        socket.join(emergencyId);
-        console.log(`SUCCESS: User ${userId} joined room ${emergencyId}`);
+        const room = `emergency:${emergencyId}`;
+        socket.join(room);
+        console.log(`✅ User ${userId} joined emergency room ${room}`);
         socket.emit('joinedRoom', emergencyId);
 
         const messages = await ChatMessage.find({ emergency: emergencyId })
@@ -63,24 +72,23 @@ const initializeSocket = (server) => {
       }
     });
 
-    // Handle chat messages
-    socket.on('chatMessage', async (data) => {
-      const { emergencyId, userId, message } = data;
-      
+    // ----- Handle chat messages -----
+    socket.on('chatMessage', async ({ emergencyId, userId, message }) => {
       try {
         const newMessage = new ChatMessage({
           emergency: emergencyId,
           sender: userId,
-          message,
+          message
         });
 
         await newMessage.save();
         await newMessage.populate('sender', 'name');
 
-        io.to(emergencyId).emit('newMessage', newMessage);
+        const room = `emergency:${emergencyId}`;
+        io.to(room).emit('newMessage', newMessage);
 
       } catch (error) {
-        console.error("Error saving message:", error);
+        console.error('Error saving message:', error);
         socket.emit('error', 'Could not send message.');
       }
     });
@@ -91,24 +99,23 @@ const initializeSocket = (server) => {
   });
 };
 
+// ----- Get initialized Socket.IO instance -----
 const getIO = () => {
-  if (!io) {
-    throw new Error("Socket.io not initialized!");
-  }
+  if (!io) throw new Error("Socket.io not initialized!");
   return io;
 };
 
-// Helper functions for emitting events
+// ----- Helper functions for emitting events -----
 const emitToUser = (userId, event, data) => {
   if (io) {
-    const room = `user:${String(userId)}`;
+    const room = `user:${userId}`;
     io.to(room).emit(event, data);
   }
 };
 
 const emitToEmergency = (emergencyId, event, data) => {
   if (io) {
-    const room = `emergency:${String(emergencyId)}`;
+    const room = `emergency:${emergencyId}`;
     io.to(room).emit(event, data);
   }
 };
@@ -119,8 +126,8 @@ const emitToAll = (event, data) => {
   }
 };
 
-module.exports = { 
-  initializeSocket, 
+module.exports = {
+  initializeSocket,
   getIO,
   emitToUser,
   emitToEmergency,

@@ -1,10 +1,10 @@
 
 import axios from "axios";
 const isLocal = window.location.hostname === "localhost";
-
+const baseURL = import.meta.env.VITE_API_URL;
 
 const axiosClient =  axios.create({
-    baseURL:  "http://localhost:3001",
+    baseURL,
     withCredentials: true,
     headers: {
         'Content-Type': 'application/json'

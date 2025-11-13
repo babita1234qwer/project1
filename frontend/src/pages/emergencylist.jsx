@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import axiosClient from "../utils/axiosclient";
 import EmergencyCard from "./emergencycard"
+const API_URL = import.meta.env.VITE_API_URL;
 
 function EmergencyList() {
   const [emergencies, setEmergencies] = useState([]);
@@ -8,7 +9,7 @@ function EmergencyList() {
   useEffect(() => {
     const fetchEmergencies = async () => {
       try {
-        const res = await axiosClient.get("/emergency/all"); // 👈 backend route
+        const res = await axiosClient.get(`${API_URL}/emergency/all`); // 👈 backend route
         setEmergencies(res.data.emergencies || []);
       } catch (err) {
         console.error("Error fetching emergencies", err);

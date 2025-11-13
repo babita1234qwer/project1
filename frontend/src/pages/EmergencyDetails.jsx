@@ -25,6 +25,8 @@ import 'leaflet/dist/leaflet.css';
 
 // --- Import the ChatBox component ---
 import ChatBox from '../components/ChatBox';
+const API_URL = import.meta.env.VITE_API_URL;
+
 
 // --- Fix for default markers ---
 delete L.Icon.Default.prototype._getIconUrl;

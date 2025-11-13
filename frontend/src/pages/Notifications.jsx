@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import axiosClient from "../utils/axiosclient";
 import { Card, CardBody, CardHeader, Button } from '@heroui/react';
+const API_URL = import.meta.env.VITE_API_URL;
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState([]);
@@ -13,7 +14,7 @@ export default function NotificationsPage() {
   
   const fetchNotifications = async () => {
     try {
-      const response = await axiosClient.get('/notifications');
+      const response = await axiosClient.get(`${API_URL}/notifications`);
       setNotifications(response.data);
     } catch (error) {
       console.error('Error fetching notifications:', error);
@@ -24,7 +25,7 @@ export default function NotificationsPage() {
   
   const markAsRead = async (notificationId) => {
     try {
-      await axiosClient.patch(`/notifications/${notificationId}/read`);
+      await axiosClient.patch(`${API_URL}/notifications/${notificationId}/read`);
       
       // Update local state
       setNotifications(prev => 
@@ -37,7 +38,7 @@ export default function NotificationsPage() {
   
   const markAllAsRead = async () => {
     try {
-      await axiosClient.patch('/notifications/read-all');
+      await axiosClient.patch(`${API_URL}/notifications/read-all`);
       
       // Update local state
       setNotifications(prev => 
