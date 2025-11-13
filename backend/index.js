@@ -37,7 +37,7 @@ initializeSocket(server);
 const PORT = process.env.PORT || 3001;
 
 app.use(cors({
-  origin: ['http://localhost:5173','https://reliable-dasik-5b9a63.netlify.app'],
+  origin: ['http://localhost:5174','https://reliable-dasik-5b9a63.netlify.app'],
   credentials: true 
 }));
 

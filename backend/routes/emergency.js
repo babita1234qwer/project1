@@ -4,7 +4,7 @@ const { createEmergency, getActiveEmergencies, respondToEmergency, updateEmergen
 const userMiddleware = require('../middleware/usermiddeware');
 
 // Create a new emergency report
-emergencyRouter.post('/create', createEmergency);
+emergencyRouter.post('/create', userMiddleware,createEmergency);
 
 // Get all active emergencies
 emergencyRouter.get("/all", userMiddleware, getActiveEmergencies);

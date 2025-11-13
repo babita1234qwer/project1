@@ -267,7 +267,7 @@ responder.userId?._id?.toString() === currentUserId?.toString()
 const handleRespond = async () => {
 try {
 setResponding(true);
-await axiosClient.post(`/emergencies/${emergencyId}/respond`);
+await axiosClient.post(`${API_URL}/emergencies/${emergencyId}/respond`);
 const res = await axiosClient.get(`/emergencies/${emergencyId}`);
 setEmergency(res.data.data);
 } catch (err) {
