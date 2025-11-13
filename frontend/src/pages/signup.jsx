@@ -76,7 +76,7 @@ function Signup() {
     }
   }, [isAuthenticated, navigate]);
 
-  // Get user location automatically
+ 
   useEffect(() => {
     if (navigator.geolocation) {
       setLocationLoading(true);
@@ -93,7 +93,6 @@ function Signup() {
           console.log('Geolocation error:', error);
           setLocationError(error.message);
           setLocationLoading(false);
-          // Don't set location if there's an error
         }
       );
     } else {
@@ -124,7 +123,7 @@ function Signup() {
     try {
       console.log('Location in registration:', location);
       
-      // Format data to match backend schema
+      
       const formattedData = {
         name: data.name,
         email: data.email,
@@ -132,7 +131,7 @@ function Signup() {
         phone: data.phone || '',
         skills: data.skills || [],
         notificationPreferences: data.notificationPreferences,
-        // Only include location if it's valid and not [0,0]
+
         ...(location && 
            location.latitude !== 0 && 
            location.longitude !== 0 && {
@@ -160,7 +159,7 @@ function Signup() {
           message: resultAction.payload || 'Signup failed',
         });
       } else {
-        // Redirect to dashboard after successful registration
+      
         navigate('/');
       }
     } catch (error) {
@@ -173,24 +172,45 @@ function Signup() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col justify-center items-center bg-neutral-900 px-4">
-      <div className="bg-neutral-800 shadow-xl rounded-2xl p-10 w-full max-w-md border border-neutral-700">
+    <div className="min-h-screen flex flex-col justify-center items-center px-4 relative">
+      {/* Background Video - Full Screen */}
+      <div className="absolute inset-0 z-0">
+        <video
+          autoPlay
+          loop
+          muted
+          playsInline
+          className="w-full h-full object-cover"
+          onError={(e) => {
+            console.error("Video error:", e);
+            e.target.parentElement.style.background = "url('/fallback-image.jpg') center/cover no-repeat";
+          }}
+        >
+          <source src="/Stars.mp4" type="video/mp4" />
+        </video>
+      </div>
+      
+      {/* Semi-transparent overlay for better readability */}
+      <div className="absolute inset-0 bg-black/30 z-10"></div>
+
+      {/* Transparent Form Container */}
+      <div className="bg-white/5 backdrop-blur-lg shadow-2xl rounded-2xl p-10 w-full max-w-md border border-white/10 z-20">
         <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-2 text-center">
-          <span className="inline-block animate-bounce">🚀</span> Emergency Response
+          <span className="inline-block animate-bounce"></span>  Account
         </h1>
-        <h2 className="text-lg text-gray-400 mb-6 font-semibold text-center">
-          Create your responder account
+        <h2 className="text-lg text-gray-200 mb-6 font-semibold text-center">
+          Create your account
         </h2>
 
         {errors.root && (
-          <div className="text-red-500 text-sm mb-4 text-center">
+          <div className="text-red-400 text-sm mb-4 p-3 bg-red-500/10 backdrop-blur-sm rounded-lg text-center">
             {typeof errors.root.message === 'string' ? errors.root.message : 'An error occurred'}
           </div>
         )}
 
         {/* Location status */}
-        <div className="mb-4 p-3 bg-neutral-700 rounded-lg">
-          <h3 className="text-sm font-semibold text-gray-300 mb-2">Location Access</h3>
+        <div className="mb-4 p-3 bg-white/5 backdrop-blur-sm rounded-lg border border-white/10">
+          <h3 className="text-sm font-semibold text-gray-200 mb-2">Location Access</h3>
           {locationLoading && (
             <p className="text-blue-400 text-sm">Getting your location...</p>
           )}
@@ -203,113 +223,78 @@ function Signup() {
             </p>
           )}
           {!location && !locationLoading && !locationError && (
-            <p className="text-gray-400 text-sm">Location not available</p>
+            <p className="text-gray-300 text-sm">Location not available</p>
           )}
         </div>
 
         <form className="w-full" onSubmit={handleSubmit(submitteddata)}>
           <div className="mb-4">
-            <label className="block text-sm text-gray-300 mb-1" htmlFor="name">Full Name</label>
+            <label className="block text-sm text-gray-200 mb-1" htmlFor="name">Full Name</label>
             <input
               {...register('name')}
               type="text"
               id="name"
-              className="w-full px-3 py-2 bg-neutral-700 text-white border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full px-3 py-2 bg-white/10 backdrop-blur-sm text-white border border-white/20 rounded focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-300"
+              placeholder="Enter your full name"
             />
             {errors.name && <span className="text-red-400 text-sm">{errors.name.message}</span>}
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm text-gray-300 mb-1" htmlFor="email">Email</label>
+            <label className="block text-sm text-gray-200 mb-1" htmlFor="email">Email</label>
             <input
               {...register('email')}
               type="email"
               id="email"
-              className="w-full px-3 py-2 bg-neutral-700 text-white border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full px-3 py-2 bg-white/10 backdrop-blur-sm text-white border border-white/20 rounded focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-300"
+              placeholder="your.email@example.com"
             />
             {errors.email && <span className="text-red-400 text-sm">{errors.email.message}</span>}
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm text-gray-300 mb-1" htmlFor="phone">Phone (Optional)</label>
+            <label className="block text-sm text-gray-200 mb-1" htmlFor="phone">Phone (Optional)</label>
             <input
               {...register('phone')}
               type="tel"
               id="phone"
-              className="w-full px-3 py-2 bg-neutral-700 text-white border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full px-3 py-2 bg-white/10 backdrop-blur-sm text-white border border-white/20 rounded focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-300"
+              placeholder="+1 (555) 123-4567"
             />
             {errors.phone && <span className="text-red-400 text-sm">{errors.phone.message}</span>}
           </div>
 
           <div className="mb-4">
-            <label className="block text-sm text-gray-300 mb-1" htmlFor="password">Password</label>
+            <label className="block text-sm text-gray-200 mb-1" htmlFor="password">Password</label>
             <input
               {...register('password')}
               type="password"
               id="password"
-              className="w-full px-3 py-2 bg-neutral-700 text-white border border-neutral-600 rounded focus:outline-none focus:ring-2 focus:ring-orange-400"
+              className="w-full px-3 py-2 bg-white/10 backdrop-blur-sm text-white border border-white/20 rounded focus:outline-none focus:ring-2 focus:ring-orange-400 placeholder-gray-300"
+              placeholder="••••••••••"
             />
             {errors.password && <span className="text-red-400 text-sm">{errors.password.message}</span>}
 
-            <p className="text-xs text-gray-500 mt-1">
+            <p className="text-xs text-gray-300 mt-1">
               Must start with a capital letter and include lowercase, number, and special character.
             </p>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm text-gray-300 mb-2">Your Skills (Optional)</label>
-            <div className="flex flex-wrap gap-2">
-              {skillOptions.map((skill) => (
-                <button
-                  key={skill}
-                  type="button"
-                  onClick={() => handleSkillToggle(skill)}
-                  className={`px-3 py-1 text-xs rounded-full ${
-                    selectedSkills.includes(skill)
-                      ? 'bg-orange-500 text-white'
-                      : 'bg-neutral-700 text-gray-300'
-                  }`}
-                >
-                  {skill.replace('_', ' ')}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="mb-6">
-            <label className="block text-sm text-gray-300 mb-2">Notification Preferences</label>
-            <div className="space-y-2">
-              {Object.entries(notificationPrefs).map(([key, value]) => (
-                <div key={key} className="flex items-center">
-                  <input
-                    type="checkbox"
-                    id={`pref-${key}`}
-                    checked={value}
-                    onChange={() => handleNotificationPrefChange(key)}
-                    className="mr-2 h-4 w-4 text-orange-500 focus:ring-orange-400 border-neutral-600 rounded bg-neutral-700"
-                  />
-                  <label htmlFor={`pref-${key}`} className="text-sm text-gray-300">
-                    {key.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-                  </label>
-                </div>
-              ))}
-            </div>
-          </div>
-
+         
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-orange-500 hover:bg-orange-400 text-white py-2 rounded-md font-semibold transition duration-150 disabled:opacity-50"
+            className="w-full bg-gradient-to-r from-orange-500 to-red-500 hover:from-orange-600 hover:to-red-600 text-white py-2 rounded-md font-semibold transition duration-150 disabled:opacity-50"
           >
             {isLoading ? 'Creating Account...' : 'Sign Up'}
           </button>
         </form>
 
-        <div className="mt-6 text-sm text-gray-400 text-center">
+        <div className="mt-6 text-sm text-gray-200 text-center">
           Already have an account?{' '}
           <span
             className="text-orange-400 font-semibold cursor-pointer hover:underline"
-            onClick={() => navigate('/login')}
+            onClick={() => navigate('/user/login')}
           >
             Login
           </span>

@@ -15,6 +15,8 @@ const locationrouter=require("./routes/location");
 const notificationrouter=require("./routes/pushNotification");
 const Reviewrouter = require('./routes/websiteReviewRoutes');
 const Donationrouter = require('./routes/donationRoutes');
+const Messagerouter = require('./routes/messagerouter');
+
 const { initNotificationSocket } = require('./controllers/notificationcontroller');
 // --- This import is correct and stays ---
 const { initializeSocket } = require('./socket/socketServer');
@@ -48,7 +50,7 @@ app.use("/notifications",notificationRouter);
 app.use('/pushnotification',notificationrouter);
 app.use('/reviews', Reviewrouter);
 app.use('/donation', Donationrouter);
-
+app.use('/messages', Messagerouter);
 const initialiseconnection = async () => {
   try {
     await Promise.all([main(), redisclient.connect()]);

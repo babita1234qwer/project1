@@ -62,7 +62,7 @@ const WebsiteReviewList = () => {
                   {new Date(review.createdAt).toLocaleDateString()}
                 </span>
               </div>
-              <p className="text-gray-700 mt-2">{review.comment}</p>
+              <p className="text-gray-100 mt-2">{review.comment}</p>
             </div>
           ))}
         </div>

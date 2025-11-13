@@ -46,8 +46,8 @@ const WebsiteReviewForm = ({ onReviewSubmitted }) => {
         reviewerEmail,
       });
       setSubmitMessage('Thank you! Your review has been submitted for approval.');
-      onReviewSubmitted(); // Refresh the list
-      // Reset form
+      onReviewSubmitted(); 
+ 
       setRating(5);
       setComment('');
       setReviewerName('');
@@ -66,23 +66,26 @@ const WebsiteReviewForm = ({ onReviewSubmitted }) => {
         <label className="block text-sm font-medium text-gray-700 mb-2">Your Rating</label>
         <StarRating rating={rating} setRating={setRating} />
       </div>
+      <label className='text-gray-100'>Your name</label>
       <Input
-        label="Your Name"
+  
         placeholder="John Doe"
         value={reviewerName}
         onChange={(e) => setReviewerName(e.target.value)}
         isRequired
       />
+      <label className='text-gray-100'>Your email</label>
       <Input
-        label="Your Email"
+       
         type="email"
         placeholder="john.doe@example.com"
         value={reviewerEmail}
         onChange={(e) => setReviewerEmail(e.target.value)}
         isRequired
       />
+      <label className='text-gray-100'>Your experience</label>
       <Textarea
-        label="Your Review"
+        
         placeholder="Tell us about your experience with HelpNet..."
         value={comment}
         onChange={(e) => setComment(e.target.value)}
@@ -92,11 +95,11 @@ const WebsiteReviewForm = ({ onReviewSubmitted }) => {
         type="submit" 
         color="primary" 
         isLoading={isSubmitting}
-        className="w-full"
+        className="w-full "
       >
         {isSubmitting ? 'Submitting...' : 'Submit Review'}
       </Button>
-      {submitMessage && <p className="text-center text-sm text-green-600">{submitMessage}</p>}
+      {submitMessage && <p className="text-center text-sm text-red-500">{submitMessage}</p>}
     </form>
   );
 };

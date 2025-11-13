@@ -1,412 +1,943 @@
-// components/Navbar.jsx
-
 import './index.css';
-import { useState, useEffect } from "react";
-import { useSelector } from 'react-redux';
-import { useDispatch } from 'react-redux';
+import { useState, useEffect, useRef } from "react";
+import { useSelector, useDispatch } from 'react-redux';
 import { logoutUser } from './authslice';
-import { useLocation } from 'react-router-dom';
-import { Badge } from "@heroui/react";
+import { useLocation, Link } from 'react-router-dom';
+import { Badge, Dropdown, DropdownTrigger, DropdownMenu, DropdownItem, Button, Chip } from "@heroui/react";
 import axiosClient from "./utils/axiosclient";
-import socket from "./utils/socket"; 
-import {Alert} from "@heroui/react";
+import { useSocket } from './hooks/useSocket';
 
-import {
-  Navbar,
-  NavbarBrand,
-  NavbarContent,
-  NavbarItem,
-  Link,
-  Dropdown,
-  DropdownTrigger,
-  DropdownMenu,
-  DropdownItem,
-  Avatar,
-  Button
-} from "@heroui/react";
-
-// Notification Bell Icon
-export const NotificationBell = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    className="h-6 w-6"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"
-    />
+// Modern Logo Component
+const HelpNetLogo = ({ className = "w-8 h-8" }) => (
+  <svg viewBox="0 0 100 100" className={className} fill="none">
+    <defs>
+      <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#8B5CF6" />
+        <stop offset="100%" stopColor="#EC4899" />
+      </linearGradient>
+    </defs>
+    <circle cx="50" cy="50" r="45" fill="url(#logoGradient)" opacity="0.1"/>
+    <path d="M50 20 L70 35 L70 55 L50 70 L30 55 L30 35 Z" fill="url(#logoGradient)" opacity="0.8"/>
+    <path d="M50 30 L60 37.5 L60 47.5 L50 55 L40 47.5 L40 37.5 Z" fill="white"/>
+    <circle cx="50" cy="45" r="5" fill="url(#logoGradient)"/>
   </svg>
 );
 
-export const HelpNetLogo = () => (
-  <svg
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-    className="w-8 h-8 text-white"
-  >
-    <path
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="2"
-      d="M12 2l9 5-9 5-9-5 9-5zm0 10l9-5v10l-9 5-9-5V7l9 5z"
-    />
+// Notification Icon
+const NotificationIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
+      d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
   </svg>
 );
-const EVENTS={
-    NEW_EMERGENCY:"newEmergency",
-    EMERGENCY_CREATED:"emergencyCreated",
-    RESPONDER_ADDED:"responderAdded",
-    RESPONDER_UPDATED:"responderUpdated",
-    EMERGENCY_STATUS_UPDATED:"emergencyStatusUpdated",
-    EMERGENCY_RESOLVED:"emergencyResolved",
-    NOTIFICATION: "notification",
-}
 
+// Clock Icon for time display
+const ClockIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  </svg>
+);
+
+// Check Icon
+const CheckIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+  </svg>
+);
+
+// Location Icon
+const LocationIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+  </svg>
+);
+
+// Tracking Icon
+const TrackingIcon = ({ className }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7" />
+  </svg>
+);
+
+const EVENTS = {
+  NEW_EMERGENCY: "newEmergency",
+  NOTIFICATION: "notification",
+};
 
 export default function NavbarHelpNet() {
   const location = useLocation();
-  const {isAuthenticated, user, loading} = useSelector((state) => state.auth);
+  const { isAuthenticated, user } = useSelector((state) => state.auth);
   const dispatch = useDispatch();
-  const [solvedProblems, setSolvedProblems] = useState([]);
+  const { socket, connected } = useSocket();
+
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  
-  const handleLogout = () => {
-    dispatch(logoutUser());
-    setSolvedProblems([]);
-  };
-useEffect(() => {
-    // Initialize socket connection
-    socket.connect();
-    
-    if (isAuthenticated && user?._id) {
-      console.log("Joining socket room with ID:", user._id);
-      socket.emit("joinRoom", { userId: user._id });
+  const [isScrolled, setIsScrolled] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [videoError, setVideoError] = useState(false);
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const videoRef = useRef(null);
+  const [notificationFilter, setNotificationFilter] = useState('all');
+  const [showReadNotifications, setShowReadNotifications] = useState(true);
 
-      // Listen for generic notifications
-      socket.on(EVENTS.NOTIFICATION, (notification) => {
-        console.log("🔔 Received notification via socket:", notification); 
-        setNotifications((prev) => [notification, ...prev]);
-        setUnreadCount((prev) => prev + 1);
-      });
+  const isHomePage = location.pathname === '/';
+  const isNotificationsPage = location.pathname === '/notifications';
 
-      // Listen for new emergencies
-      socket.on(EVENTS.NEW_EMERGENCY, (data) => {
-        console.log("🚨 Received new emergency:", data);
-        // You might want to handle this differently
-        // For now, we'll create a notification object
-        const emergencyNotification = {
-          _id: `emergency-${data.emergency._id}`,
-          title: `${data.emergency.emergencyType.toUpperCase()} EMERGENCY NEARBY`,
-          message: data.emergency.description,
-          createdAt: data.emergency.createdAt,
-          read: false,
-          type: 'emergency_alert',
-          emergencyId: data.emergency._id
-        };
-        
-        setNotifications((prev) => [emergencyNotification, ...prev]);
-        setUnreadCount((prev) => prev + 1);
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 20);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Video handling
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video) return;
+
+    const handleVideoLoad = () => {
+      setVideoLoaded(true);
+      const playPromise = video.play();
+      if (playPromise !== undefined) {
+        playPromise.catch(error => {
+          console.log("Autoplay prevented:", error);
+          setVideoError(true);
+        });
+      }
+    };
+
+    const handleVideoError = (e) => {
+      console.error("Video loading error:", e);
+      setVideoError(true);
+    };
+
+    video.addEventListener('loadeddata', handleVideoLoad);
+    video.addEventListener('error', handleVideoError);
+    video.load();
+
+    return () => {
+      video.removeEventListener('loadeddata', handleVideoLoad);
+      video.removeEventListener('error', handleVideoError);
+    };
+  }, [isHomePage]);
+
+  const handlePlayVideo = () => {
+    if (videoRef.current) {
+      videoRef.current.play().then(() => {
+        setVideoError(false);
+      }).catch(error => {
+        console.error("Error playing video:", error);
       });
     }
+  };
 
-    // Clean up when component unmounts or user logs out
+  const handleLogout = () => {
+    dispatch(logoutUser());
+    setNotifications([]);
+    setUnreadCount(0);
+  };
+
+  // Optimistic update for marking as read
+  const markAsRead = async (notificationId) => {
+    try {
+      const wasUnread = notifications.find(n => n._id === notificationId)?.read === false;
+      
+      setNotifications(prev => prev.map(notification => 
+        notification._id === notificationId 
+          ? { ...notification, read: true } 
+          : notification
+      ));
+      
+      if (wasUnread) {
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+      
+      await axiosClient.patch(`/notifications/${notificationId}/read`);
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+      setNotifications(prev => prev.map(notification => 
+        notification._id === notificationId 
+          ? { ...notification, read: false } 
+          : notification
+      ));
+      setUnreadCount(prev => prev + 1);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const unreadNotifications = notifications.filter(n => !n.read);
+      if (unreadNotifications.length === 0) return;
+      
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+      
+      await axiosClient.patch('/notifications/read-all');
+    } catch (err) {
+      console.error("Failed to mark all as read:", err);
+      fetchNotifications();
+    }
+  };
+
+  const fetchNotifications = async (includeRead = false) => {
+    try {
+      const response = await axiosClient.get(`/notifications/get?includeRead=${includeRead}`);
+      const notificationsArray = response.data?.data;
+      if (Array.isArray(notificationsArray)) {
+        if (includeRead) {
+          const serverUnreadCount = notificationsArray.filter(n => !n.read).length;
+          if (serverUnreadCount !== unreadCount || notificationsArray.length !== notifications.length) {
+            setNotifications(notificationsArray);
+            setUnreadCount(serverUnreadCount);
+          }
+        } else {
+          setNotifications(notificationsArray);
+          setUnreadCount(notificationsArray.length);
+        }
+      } else {
+        setNotifications([]);
+        setUnreadCount(0);
+      }
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  // Handle socket events
+  useEffect(() => {
+    if (!socket || !connected || !isAuthenticated || !user?._id) return;
+
+    socket.emit("joinRoom", { userId: user._id });
+
+    socket.on(EVENTS.NOTIFICATION, (notification) => {
+      setNotifications(prev => [notification, ...prev]);
+      setUnreadCount(prev => prev + 1);
+    });
+
+    socket.on(EVENTS.NEW_EMERGENCY, (data) => {
+      const emergencyNotification = {
+        _id: `emergency-${data.emergency._id}`,
+        title: `${data.emergency.emergencyType.toUpperCase()} EMERGENCY NEARBY`,
+        message: data.emergency.description,
+        createdAt: data.emergency.createdAt,
+        read: false,
+        type: 'emergency_alert',
+        emergencyId: data.emergency._id
+      };
+      setNotifications(prev => [emergencyNotification, ...prev]);
+      setUnreadCount(prev => prev + 1);
+    });
+
     return () => {
       socket.off(EVENTS.NOTIFICATION);
       socket.off(EVENTS.NEW_EMERGENCY);
-      if (!isAuthenticated) {
-        socket.disconnect();
-      }
     };
-  }, [isAuthenticated, user?._id]);
-useEffect(() => {
-  if (isAuthenticated) {
-    fetchNotifications();  // Initial fetch
+  }, [socket, connected, isAuthenticated, user?._id]);
 
-    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
-
-    return () => clearInterval(interval); // Clean up interval
-  }
-}, [isAuthenticated]);
-
-  // Fetch notifications
-  
-  // The CORRECTED function
-const fetchNotifications = async () => {
-  try {
-    const response = await axiosClient.get('/notifications/get');
-    
-    // The actual array of notifications is in response.data.data
-    const notificationsArray = response.data.data;
-   // const notificationsArray = response.data.data;
-
-    // ADD THIS LOG TO SEE THE ARRAY YOU'RE TRYING TO USE
-    console.log("Notifications array:", notificationsArray);
-
-    if (Array.isArray(notificationsArray)) {
-      setNotifications(notificationsArray);
-      const unread = notificationsArray.filter(n => !n.read).length;
-      setUnreadCount(unread);
-    } else {
-      // This case is now less likely, but good to keep for safety
-      console.error('API did not return an array in the data property. Received:', response.data);
-      setNotifications([]);
-      setUnreadCount(0);
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchNotifications(false);
+      const interval = setInterval(() => fetchNotifications(false), 30000);
+      return () => clearInterval(interval);
     }
-  } catch (error) {
-    console.error('Error fetching notifications:', error);
-    setNotifications([]);
-    setUnreadCount(0);
-  }
-};
-  const markAsRead = async (notificationId) => {
-    try {
-      await axiosClient.patch(`/notifications/${notificationId}/read`);
-      
-      // Update local state
-      setNotifications(prev => 
-        prev.map(n => n._id === notificationId ? { ...n, read: true } : n)
-      );
-      
-      // Update unread count
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
+  }, [isAuthenticated]);
+
+  const getNotificationIcon = (type) => {
+    switch(type) {
+      case 'success':
+        return <span className="text-green-400">✓</span>;
+      case 'info':
+        return <span className="text-blue-400">ℹ</span>;
+      case 'warning':
+        return <span className="text-yellow-400">⚠</span>;
+      case 'error':
+        return <span className="text-red-400">✕</span>;
+      case 'emergency_alert':
+        return <span className="text-red-400">🚨</span>;
+      default:
+        return <span className="text-purple-300">🔔</span>;
     }
   };
 
-  // Check if we're on the home page to show the hero section
-  const isHomePage = location.pathname === '/';
+  const formatTimeAgo = (dateString) => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now - date) / 1000);
+    
+    if (diffInSeconds < 60) return 'Just now';
+    if (diffInSeconds < 3600) return `${Math.floor(diffInSeconds / 60)} minutes ago`;
+    if (diffInSeconds < 86400) return `${Math.floor(diffInSeconds / 3600)} hours ago`;
+    if (diffInSeconds < 604800) return `${Math.floor(diffInSeconds / 86400)} days ago`;
+    
+    return date.toLocaleDateString();
+  };
+
+  const getFilteredNotifications = () => {
+    if (notificationFilter === 'unread' || !showReadNotifications) {
+      return notifications.filter(n => !n.read);
+    }
+    if (notificationFilter === 'read') {
+      fetchNotifications(true);
+      return notifications.filter(n => n.read);
+    }
+    return notifications;
+  };
+
+  const navLinks = [
+    { name: 'Home', path: '/' },
+    { name: 'Volunteers', path: '/volunteers' },
+    { name: 'About', path: '/about' },
+    { name: 'Emergency Map', path: '/emergency/map' },
+  ];
 
   return (
     <>
-      <Navbar className="w-full fixed top-0 left-0 z-50 bg-blue-600 px-6 py-3" maxWidth="none">
-        
-        {/* Logo + Requests */}
-        <NavbarBrand className="flex items-center gap-4 flex-shrink-0">
-          <HelpNetLogo />
-          <span className="font-bold text-xl">HelpNet</span>
-        </NavbarBrand>
+      {/* Header with always visible background */}
+      <header className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
+        isScrolled 
+          ? 'bg-gradient-to-r from-purple-800/95 to-indigo-800/95 backdrop-blur-lg shadow-lg' 
+          : 'bg-gradient-to-r from-purple-800 to-indigo-800 shadow-md'
+      }`}>
+        <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo */}
+            <Link to="/" className="flex items-center space-x-3 group">
+              <HelpNetLogo className="w-10 h-10 transform group-hover:scale-110 transition-transform duration-300" />
+              <span className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
+                HelpNet
+              </span>
+            </Link>
 
-        {/* Center Menu Items */}
-        <NavbarContent className="flex gap-6 justify-evenly flex-grow">
-          <Button
-            as={Link}
-            href="/emergency/create"
-            color="secondary"
-            variant="flat"
-            className="font-medium"
-          >
-            Report
-          </Button>
-          
-          <NavbarItem>
-            <Link color="foreground" href="/volunteers" className="text-white font-medium text-lg hover:text-blue-200 transition-colors">
-              Volunteers
-            </Link>
-          </NavbarItem>
-          <NavbarItem>
-            <Dropdown placement="bottom">
-              <DropdownTrigger>
-                <Link color="foreground" href="#" className="text-white font-medium text-lg hover:text-blue-200 transition-colors">
-                  Emergency Services
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center space-x-8">
+              {navLinks.map((link) => (
+                <Link
+                  key={link.name}
+                  to={link.path}
+                  className={`relative px-3 py-2 text-sm font-medium transition-all duration-300 hover:text-purple-300 ${
+                    location.pathname === link.path 
+                      ? 'text-purple-300' 
+                      : 'text-gray-100'
+                  }`}
+                >
+                  {link.name}
+                  {link.name === 'Notifications' && unreadCount > 0 && (
+                    <Badge 
+                      color="danger" 
+                      content={unreadCount > 99 ? "99+" : unreadCount}
+                      className="absolute -top-1 -right-1 animate-bounce"
+                    />
+                  )}
+                  {location.pathname === link.path && (
+                    <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-gradient-to-r from-purple-400 to-pink-400 rounded-full" />
+                  )}
                 </Link>
-              </DropdownTrigger>
-      
-              <DropdownMenu
-                variant="flat"
-                aria-label="Emergency Services"
-                className="flex-col bg-blue-600/90 backdrop-blur-md rounded-md shadow-sm"
+              ))}
+            </div>
+
+            {/* Right Section */}
+            <div className="flex items-center space-x-4">
+              {/* Emergency Button */}
+              <Button
+                as={Link}
+                to="/emergency/create"
+                className="bg-gradient-to-r from-red-500 to-pink-500 text-white px-4 py-2 rounded-full text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 transition-all duration-300 hover:from-red-600 hover:to-pink-600"
               >
-                <DropdownItem className="px-4 py-2 hover:bg-blue-500 text-white font-medium transition-colors rounded-md">
-                  <Link href="/emergency/map" className="w-full h-full block text-white">
-                    Emergency Map
-                  </Link>
-                </DropdownItem>
-                <DropdownItem className="px-4 py-2 hover:bg-blue-500 text-white font-medium transition-colors rounded-md">
-                  <Link href="/emergency/create" className="w-full h-full block text-white">
-                    Report Emergency
-                  </Link>
-                </DropdownItem>
-                <DropdownItem className="px-4 py-2 hover:bg-blue-500 text-white font-medium transition-colors rounded-md">
-                  Natural Calamities
-                </DropdownItem>
-                <DropdownItem className="px-4 py-2 hover:bg-blue-500 text-white font-medium transition-colors rounded-md">
-                  Donation
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          </NavbarItem>
-          <NavbarItem>
-            <Link color="foreground" href="/about" className="text-white font-medium text-lg hover:text-blue-200 transition-colors">
-              About
-            </Link>
-          </NavbarItem>
-        </NavbarContent>
- {/* Right: Notifications + Profile Dropdown */}
-      <NavbarContent as="div" justify="end" className="flex-shrink-0 gap-2">
-        {isAuthenticated && (
-          <Dropdown placement="bottom-end">
-            <DropdownTrigger>
-              <Badge color="danger" content={unreadCount} isInvisible={unreadCount === 0}>
-                <Button isIconOnly color="transparent" className="text-white" aria-label="Notifications">
-                  <NotificationBell />
-                </Button>
-              </Badge>
-            </DropdownTrigger>
-            
-            <DropdownMenu aria-label="Notifications" variant="flat" className="max-w-80">
-              <DropdownItem key="header" className="opacity-100">
-                <p className="font-semibold">Notifications</p>
-              </DropdownItem>
-                    
-              {notifications.length === 0 ? (
-                <DropdownItem key="empty" className="opacity-100">
-                  <Alert color="default" variant="faded" title="No notifications" description="You're all caught up!" />
-                </DropdownItem>
-              ) : (
-                notifications.slice(0, 5).map((notification) => (
-                  <DropdownItem 
-                    key={notification._id} 
-                    className="opacity-100 p-0"
-                    onClick={() => markAsRead(notification._id)}
-                  >
-                    <Alert 
-                      color={!notification.read ? "warning" : "success"} 
-                      variant="solid" 
-                      title={notification.title}
-                      description={
-                        <div className='border-t border-gray-300 mt-1 pt-1'>
-                          <p className='text-xs text-gray-00'>{notification.message}</p>
-                          <p className="text-xs text-gray-900 mt-1">
-                            {new Date(notification.createdAt).toLocaleString()}
+                <span className="flex items-center space-x-2">
+                  <span>🚨</span>
+                  <span>Report Emergency</span>
+                </span>
+              </Button>
+
+              {/* Notifications */}
+              {isAuthenticated && (
+                <Dropdown placement="bottom-end">
+                  <DropdownTrigger>
+                    <button className="relative p-2 rounded-full hover:bg-purple-700/30 transition-colors duration-300">
+                      <div className="flex flex-row gap-2 items-center">
+                        <NotificationIcon className="w-6 h-6 text-gray-100" />
+                        {unreadCount > 0 && (
+                          <Badge 
+                            color="danger" 
+                            content={unreadCount > 99 ? "99+" : unreadCount}
+                            className="w-6 h-6 animate-pulse"
+                            shape="circle"
+                          />
+                        )}
+                      </div>
+                    </button>
+                  </DropdownTrigger>
+                  <DropdownMenu aria-label="Notifications" className="w-96 max-h-96 overflow-y-auto bg-gradient-to-b from-purple-900/95 to-indigo-900/95 backdrop-blur-lg border border-purple-700/50">
+                    <DropdownItem key="header" className="opacity-100 bg-gradient-to-r from-purple-800/50 to-indigo-800/50">
+                      <div className="flex justify-between items-center py-2">
+                        <span className="font-semibold text-purple-100">Notifications</span>
+                        {unreadCount > 0 && (
+                          <button 
+                            onClick={markAllAsRead}
+                            className="text-xs bg-purple-700/50 text-purple-200 hover:bg-purple-600/50 px-2 py-1 rounded-full transition-colors"
+                          >
+                            Mark all as read
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex bg-purple-800/30 rounded-lg p-1 mt-2 shadow-sm">
+                        <Button
+                          size="sm"
+                          variant={notificationFilter === 'all' ? 'solid' : 'light'}
+                          color={notificationFilter === 'all' ? 'primary' : 'default'}
+                          onClick={() => setNotificationFilter('all')}
+                          className="px-3"
+                        >
+                          All
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={notificationFilter === 'unread' ? 'solid' : 'light'}
+                          color={notificationFilter === 'unread' ? 'primary' : 'default'}
+                          onClick={() => setNotificationFilter('unread')}
+                          className="px-3"
+                        >
+                          Unread
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={notificationFilter === 'read' ? 'solid' : 'light'}
+                          color={notificationFilter === 'read' ? 'primary' : 'default'}
+                          onClick={() => setNotificationFilter('read')}
+                          className="px-3"
+                        >
+                          Read
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="gray"
+                          onClick={() => setShowReadNotifications(!showReadNotifications)}
+                          className="px-3"
+                        >
+                          {showReadNotifications ? 'Hide Read' : 'Show Read'}
+                        </Button>
+                      </div>
+                    </DropdownItem>
+                    {getFilteredNotifications().length > 0 ? (
+                      <>
+                        {getFilteredNotifications().slice(0, 5).map((notif) => (
+                          <DropdownItem 
+                            key={notif._id} 
+                            className={`py-3 border-b border-purple-700/30 ${
+                              !notif.read 
+                                ? 'bg-gradient-to-r from-purple-700/30 to-indigo-700/30' 
+                                : 'bg-purple-800/20 hover:bg-purple-700/30'
+                            }`}
+                            onClick={() => markAsRead(notif._id)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`flex-shrink-0 mt-1 p-2 rounded-full ${
+                                !notif.read ? 'bg-purple-600/30' : 'bg-purple-800/30'
+                              }`}>
+                                {getNotificationIcon(notif.type)}
+                              </div>
+                              <div className="flex-grow">
+                                <div className="flex justify-between items-start">
+                                  <h3 className={`font-semibold text-sm ${!notif.read ? 'text-purple-100' : 'text-purple-200'}`}>
+                                    {notif.title}
+                                  </h3>
+                                  <div className="flex items-center gap-2 ml-2">
+                                    {!notif.read && (
+                                      <Chip size="sm" color="primary" variant="dot">
+                                        New
+                                      </Chip>
+                                    )}
+                                    {notif.read && (
+                                      <Chip size="sm" color="gray" variant="flat">
+                                        Read
+                                      </Chip>
+                                    )}
+                                    <span className="text-sm text-purple-300 flex items-center gap-1">
+                                      <ClockIcon className="w-3 h-3" />
+                                      {formatTimeAgo(notif.createdAt)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className={`text-xs mt-1 ${!notif.read ? 'text-purple-200' : 'text-purple-300'}`}>
+                                  {notif.message}
+                                </p>
+                                {!notif.read && (
+                                  <Button 
+                                    color="primary" 
+                                    size="sm" 
+                                    variant="flat"
+                                    endContent={<CheckIcon className="w-3 h-3" />}
+                                    className="mt-2 bg-purple-600/30 text-purple-200 hover:bg-purple-600/50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      markAsRead(notif._id);
+                                    }}
+                                  >
+                                    Mark as Read
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </DropdownItem>
+                        ))}
+                        <DropdownItem key="view-all" className="opacity-100 bg-gradient-to-r from-purple-800/50 to-indigo-800/50">
+                          <Button
+                            as={Link}
+                            to="/notifications"
+                            color="primary"
+                            variant="flat"
+                            className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
+                          >
+                            View All Notifications
+                          </Button>
+                        </DropdownItem>
+                      </>
+                    ) : (
+                      <DropdownItem key="empty">
+                        <div className="text-center py-12 bg-gradient-to-r from-purple-800/30 to-indigo-800/30 rounded-lg">
+                          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-700/30 rounded-full mb-2">
+                            <span className="text-2xl">🔔</span>
+                          </div>
+                          <p className="text-purple-300">
+                            {notificationFilter !== 'all' 
+                              ? `No ${notificationFilter} notifications to display` 
+                              : "No notifications"}
                           </p>
                         </div>
-                      }
-                      className="w-full cursor-pointer"
-                    />
-                  </DropdownItem>
-                ))
+                      </DropdownItem>
+                    )}
+                  </DropdownMenu>
+                </Dropdown>
               )}
-            </DropdownMenu>
-          </Dropdown>
-        )}
-   
 
-          {isAuthenticated ? (
-            <Dropdown placement="bottom-end">
-              <DropdownTrigger>
-                <Avatar
-                  isBordered
-                  as="button"
-                  color="secondary"
-                  name="HelpNet User"
-                  size="sm"
-                  src="https://i.pravatar.cc/150?u=user" 
-                  className="w-12 h-12 rounded-full border border-gray-300"
-                />
-              </DropdownTrigger>
-                
-              <DropdownMenu aria-label="Profile Actions" variant="flat">
-                <DropdownItem className="h-14 gap-2 flex-col">
-                  <p className="font-semibold">Signed in as</p>
-                  <p className="font-semibold">{user.email}</p>
-                </DropdownItem>
-                <DropdownItem>Dashboard</DropdownItem>
-                <DropdownItem>Settings</DropdownItem>
-                <DropdownItem>Help & Feedback</DropdownItem>
-                <DropdownItem color="danger" onClick={handleLogout}>
-                  Log Out
-                </DropdownItem>
-              </DropdownMenu>
-            </Dropdown>
-          ) : (
-            <Button
-              as={Link}
-              href="/user/login"
-              color="secondary"
-              variant="flat"
-              className="font-medium"
-            >
-              Login
-            </Button>
+              {/* User Menu */}
+              {isAuthenticated ? (
+                <Dropdown placement="bottom-end">
+                  <DropdownTrigger>
+                    <div className="relative cursor-pointer">
+                      <div className="w-10 h-10 rounded-full overflow-hidden ring-2 ring-purple-400 ring-offset-2 hover:ring-purple-300 transition-all duration-300">
+                        <img 
+                          src={user?.avatar || "https://i.pravatar.cc/150?u=user"} 
+                          alt="Profile"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    </div>
+                  </DropdownTrigger>
+                  <DropdownMenu aria-label="Profile Actions" className="bg-gradient-to-b from-purple-900/95 to-indigo-900/95 backdrop-blur-lg border border-purple-700/50">
+                    <DropdownItem key="profile" className="opacity-100 bg-purple-800/30">
+                      <div className="flex items-center space-x-3">
+                        <img 
+                          src={user?.avatar || "https://i.pravatar.cc/150?u=user"} 
+                          alt="Profile"
+                          className="w-10 h-10 rounded-full"
+                        />
+                        <div>
+                          <p className="font-semibold text-purple-100">{user?.name || 'User'}</p>
+                          <p className="text-xs text-purple-300">{user?.email}</p>
+                        </div>
+                      </div>
+                    </DropdownItem>
+                    <DropdownItem key="dashboard" className="text-purple-100 hover:bg-purple-700/30">Dashboard</DropdownItem>
+                    <DropdownItem key="settings" className="text-purple-100 hover:bg-purple-700/30">Settings</DropdownItem>
+                    <DropdownItem key="help" className="text-purple-100 hover:bg-purple-700/30">Help & Support</DropdownItem>
+                    <DropdownItem key="logout" color="danger" onClick={handleLogout} className="text-red-400 hover:bg-red-900/30">
+                      Log Out
+                    </DropdownItem>
+                  </DropdownMenu>
+                </Dropdown>
+              ) : (
+                <Button
+                  as={Link}
+                  to="/user/login"
+                  variant="bordered"
+                  className="border-purple-400 text-purple-300 hover:bg-purple-700 hover:text-white transition-all duration-300"
+                >
+                  Login
+                </Button>
+              )}
+
+              {/* Mobile Menu Button */}
+              <button
+                onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                className="md:hidden p-2 rounded-lg hover:bg-purple-700/30 transition-colors"
+              >
+                <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  {isMobileMenuOpen ? (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  ) : (
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+                  )}
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Mobile Menu */}
+          {isMobileMenuOpen && (
+            <div className="md:hidden bg-gradient-to-r from-purple-800 to-indigo-800 border-t border-purple-700">
+              <div className="px-2 pt-2 pb-3 space-y-1">
+                {navLinks.map((link) => (
+                  <Link
+                    key={link.name}
+                    to={link.path}
+                    className="block px-3 py-2 rounded-md text-base font-medium text-gray-100 hover:text-purple-300 hover:bg-purple-700/30"
+                    onClick={() => setIsMobileMenuOpen(false)}
+                  >
+                    {link.name}
+                    {link.name === 'Notifications' && unreadCount > 0 && (
+                      <Badge 
+                        color="danger" 
+                        content={unreadCount > 99 ? "99+" : unreadCount}
+                        className="ml-2"
+                      />
+                    )}
+                  </Link>
+                ))}
+              </div>
+            </div>
           )}
-        </NavbarContent>
-      </Navbar>
+        </nav>
+      </header>
 
+      {/* Spacer for fixed header */}
+      <div className="h-16"></div>
+
+      {/* Hero Section with Updated Content */}
       {isHomePage && (
-        <section className="hero-section w-full bg-gray-900 text-white py-48 px-6 text-center">
-          <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-6 continuous-fade continuous-fade-delay-1">
-            Let's come together to help and support every community in need.
-          </h1>
-          <h2 className="text-4xl md:text-5xl font-bold leading-snug mb-4 continuous-fade continuous-fade-delay-2">
-            Together, we can make a difference in the world!
-          </h2>
-          <h3 className="text-2xl md:text-3xl font-medium leading-snug continuous-fade-delay-3">
-            Join hands and make an impact today. Connect, contribute, and change lives for the better.
-          </h3>
+        <section className="relative w-full min-h-screen flex items-center justify-center overflow-hidden bg-gradient-to-br from-purple-900 via-indigo-900 to-pink-900">
+          {/* Video Background with Fallbacks */}
+          <div className="absolute inset-0 z-0">
+            {!videoError ? (
+              <>
+                <video
+                  ref={videoRef}
+                  autoPlay
+                  loop
+                  muted
+                  playsInline
+                  preload="auto"
+                  className="w-full h-full object-cover"
+                  style={{ opacity: videoLoaded ? 0.6 : 0 }}
+                >
+                  <source src="/videos/Earth.mp4" type="video/mp4; codecs=avc1.42E01E,mp4a.40.2" />
+                  <source src="/videos/Earth.webm" type="video/webm" />
+                  <source src="/Earth.mp4" type="video/mp4" />
+                  Your browser does not support the video tag.
+                </video>
+                
+                {!videoLoaded && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-purple-900">
+                    <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white"></div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <div className="w-full h-full bg-gradient-to-br from-purple-900 via-indigo-900 to-pink-900">
+                <div className="absolute inset-0 opacity-30">
+                  <div className="absolute top-0 left-0 w-96 h-96 bg-purple-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse"></div>
+                  <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse animation-delay-2000"></div>
+                  <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-pink-500 rounded-full mix-blend-multiply filter blur-3xl animate-pulse animation-delay-4000"></div>
+                </div>
+              </div>
+            )}
+
+            {videoError && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <button
+                  onClick={handlePlayVideo}
+                  className="bg-white/20 backdrop-blur-sm rounded-full p-6 hover:bg-white/30 transition-all duration-300 group"
+                >
+                  <svg className="w-12 h-12 text-white group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                </button>
+              </div>
+            )}
+
+            <div className="absolute inset-0 bg-gradient-to-b from-transparent via-purple-900/50 to-purple-900/80"></div>
+          </div>
+
+          {/* Content */}
+          <div className="relative z-10 max-w-6xl mx-auto px-4 text-center">
+            <h1 className="text-5xl md:text-7xl font-extrabold leading-tight mb-6">
+              <span className="bg-gradient-to-r from-white via-purple-100 to-pink-100 bg-clip-text text-transparent">
+                Get Help in Emergencies
+              </span>
+              <br />
+              <span className="bg-gradient-to-r from-yellow-300 to-orange-400 bg-clip-text text-transparent">
+                With Live Tracking
+              </span>
+            </h1>
+            <p className="text-2xl md:text-3xl font-light text-purple-100 mb-8">
+              Connect responders to those in need with real-time location tracking
+            </p>
+            <p className="text-lg md:text-xl text-purple-200 max-w-3xl mx-auto mb-12">
+              HelpNet instantly connects people facing emergencies with nearby volunteers and emergency services. 
+              Our live tracking system ensures help reaches exactly where it's needed, when it's needed most.
+            </p>
+            
+            {/* Feature Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
+                <div className="flex justify-center mb-4">
+                  <LocationIcon className="w-12 h-12 text-purple-300" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Instant Location Sharing</h3>
+                <p className="text-purple-200">
+                  Automatically share your location when reporting an emergency for faster response
+                </p>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
+                <div className="flex justify-center mb-4">
+                  <TrackingIcon className="w-12 h-12 text-purple-300" />
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Live Tracking</h3>
+                <p className="text-purple-200">
+                  Track responders in real-time as they navigate to your location with ETA updates
+                </p>
+              </div>
+              
+              <div className="bg-white/10 backdrop-blur-md rounded-lg p-6 border border-white/20">
+                <div className="flex justify-center mb-4">
+                  <svg className="w-12 h-12 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                  </svg>
+                </div>
+                <h3 className="text-xl font-semibold text-white mb-2">Real-time Communication</h3>
+                <p className="text-purple-200">
+                  Stay connected with responders through our chat system for critical updates
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Button
+                as={Link}
+                to="/volunteers"
+                size="lg"
+                className="bg-white text-purple-700 px-8 py-4 rounded-full text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
+              >
+                Become a Volunteer
+              </Button>
+              <Button
+                as={Link}
+                to="/about"
+                size="lg"
+                variant="bordered"
+                className="border-white text-white px-8 py-4 rounded-full text-lg font-semibold hover:bg-white hover:text-purple-700 transition-all duration-300"
+              >
+                Learn More
+              </Button>
+            </div>
+          </div>
         </section>
       )}
 
-      <footer className="bg-blue-800 text-white py-16 px-6">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row justify-between gap-8">
-
-          {/* Logo + About */}
-          <div className="flex flex-col gap-4 md:w-1/3">
+      {/* Notifications Page */}
+      {isNotificationsPage && (
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
             <div className="flex items-center gap-2">
-              <HelpNetLogo className="w-8 h-8 text-yellow-300" />
-              <span className="font-bold text-xl">HelpNet</span>
+              <h1 className="text-3xl font-bold text-purple-100">Notifications</h1>
+              {unreadCount > 0 && (
+                <Badge 
+                  color="primary" 
+                  content={unreadCount > 99 ? "99+" : unreadCount}
+                  className="w-6 h-6 animate-pulse"
+                  shape="circle"
+                />
+              )}
             </div>
-            <p className="text-gray-200">
-              Connecting volunteers and communities to make a difference together. Join us and help those in need!
-            </p>
-          </div>
-
-          {/* Quick Links */}
-          <div className="flex flex-col gap-2 md:w-1/3">
-            <h3 className="font-semibold text-lg mb-2">Quick Links</h3>
-            <a href="/requests" className="text-gray-200 hover:text-white transition-colors">Requests</a>
-            <a href="/volunteers" className="text-gray-200 hover:text-white transition-colors">Volunteers</a>
-            <a href="/about" className="text-gray-200 hover:text-white transition-colors">About</a>
-            <a href="#" className="text-gray-200 hover:text-white transition-colors">Emergency Services</a>
-          </div>
-
-          {/* Social / Contact */}
-          <div className="flex flex-col gap-4 md:w-1/3">
-            <h3 className="font-semibold text-lg mb-2">Connect with us</h3>
-            <div className="flex gap-4">
-              {/* Facebook */}
-              <a href="#" className="text-gray-200 hover:text-blue-500 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M22.23 0H1.77C.79 0 0 .78 0 1.75v20.5C0 23.22.79 24 1.77 24h20.46c.98 0 1.77-.78 1.77-1.75V1.75C24 .78 23.21 0 22.23 0zM7.12 20.45H3.56V9h3.56v11.45zM5.34 7.57a2.06 2.06 0 110-4.12 2.06 2.06 0 010 4.12zm15.11 12.88h-3.55v-5.58c0-1.33-.03-3.05-1.86-3.05-1.86 0-2.15 1.46-2.15 2.96v5.67h-3.55V9h3.41v1.56h.05c.48-.91 1.65-1.86 3.39-1.86 3.62 0 4.28 2.38 4.28 5.46v6.28z"/>
-                </svg>
-              </a>
-              {/* Twitter */}
-              <a href="#" className="text-gray-200 hover:text-blue-400 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M24 4.56a9.94 9.94 0 01-2.83.78 4.95 4.95 0 002.17-2.72 9.84 9.84 0 01-3.13 1.2 4.92 4.92 0 00-8.4 4.49A13.94 13.94 0 011.67 3.15a4.91 4.91 0 001.52 6.57 4.93 4.93 0 01-2.23-.61v.06a4.93 4.93 0 003.95 4.83 4.9 4.9 0 01-2.22.08 4.93 4.93 0 004.6 3.42 9.86 9.86 0 01-6.1 2.1c-.4 0-.79-.02-1.18-.07a13.92 13.92 0 007.56 2.22c9.06 0 14-7.5 14-14v-.64A9.98 9.98 0 0024 4.56z"/>
-                </svg>
-              </a>
-              {/* Instagram */}
-              <a href="#" className="text-gray-200 hover:text-pink-500 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M12 2.16c3.2 0 3.584.012 4.85.07 1.17.056 1.97.248 2.43.414a4.9 4.9 0 011.77 1.03 4.9 4.9 0 011.03 1.77c.166.46.358 1.26.414 2.43.058 1.27.07 1.65.07 4.85s-.012 3.584-.07 4.85c-.056 1.17-.248 1.97-.414 2.43a4.9 4.9 0 01-1.77-1.03 4.9 4.9 0 01-1.03-1.77c-.166-.46-.358-1.26-.414-2.43C2.172 15.584 2.16 15.2 2.16 12s.012-3.584.07-4.85c.056-1.17.248-1.97.414-2.43a4.9 4.9 0 011.03-1.77 4.9 4.9 0 011.77-1.03c.46-.166 1.26-.358 2.43-.414C8.416 2.172 8.8 2.16 12 2.16zM12 7.44a4.56 4.56 0 110 9.12 4.56 4.56 0 010-9.12zm0 1.84a2.72 2.72 0 100 5.44 2.72 2.72 0 000-5.44zm4.88-2.82a1.06 1.06 0 11-2.12 0 1.06 1.06 0 012.12 0z"/>
-                </svg>
-              </a>
+            <div className="flex gap-2">
+              <div className="flex bg-purple-800/30 rounded-lg p-1">
+                <Button
+                  size="sm"
+                  variant={notificationFilter === 'all' ? 'solid' : 'light'}
+                  color={notificationFilter === 'all' ? 'primary' : 'default'}
+                  onClick={() => setNotificationFilter('all')}
+                  className="px-3"
+                >
+                  All
+                </Button>
+                <Button
+                  size="sm"
+                  variant={notificationFilter === 'unread' ? 'solid' : 'light'}
+                  color={notificationFilter === 'unread' ? 'primary' : 'default'}
+                  onClick={() => setNotificationFilter('unread')}
+                  className="px-3"
+                >
+                  Unread
+                </Button>
+                <Button
+                  size="sm"
+                  variant={notificationFilter === 'read' ? 'solid' : 'light'}
+                  color={notificationFilter === 'read' ? 'primary' : 'default'}
+                  onClick={() => setNotificationFilter('read')}
+                  className="px-3"
+                >
+                  Read
+                </Button>
+                <Button
+                  size="sm"
+                  variant="light"
+                  color="gray"
+                  onClick={() => setShowReadNotifications(!showReadNotifications)}
+                  className="px-3"
+                >
+                  {showReadNotifications ? 'Hide Read' : 'Show Read'}
+                </Button>
+              </div>
+              {unreadCount > 0 && (
+                <Button color="primary" onClick={markAllAsRead} className="bg-purple-600 hover:bg-purple-700">
+                  Mark All as Read ✓
+                </Button>
+              )}
             </div>
           </div>
+          
+          {getFilteredNotifications().length === 0 ? (
+            <div className="text-center py-12 bg-purple-800/20 rounded-lg">
+              <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-700/30 rounded-full mb-4">
+                <span className="text-2xl">🔔</span>
+              </div>
+              <h3 className="text-xl font-medium text-purple-100 mb-1">No notifications</h3>
+              <p className="text-purple-300">
+                {notificationFilter !== 'all' 
+                  ? `No ${notificationFilter} notifications to display` 
+                  : "You're all caught up! Check back later for new notifications."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {getFilteredNotifications().map((notification) => (
+                <div 
+                  key={notification._id} 
+                  className={`transition-all duration-200 hover:shadow-md rounded-lg border ${
+                    !notification.read 
+                      ? 'bg-gradient-to-r from-purple-700/30 to-indigo-700/30 border-l-4 border-purple-400' 
+                      : 'bg-purple-800/20 border-l-4 border-purple-600/50'
+                  }`}
+                >
+                  <div className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className={`flex-shrink-0 mt-1 p-2 rounded-full ${
+                        !notification.read ? 'bg-purple-600/30' : 'bg-purple-800/30'
+                      }`}>
+                        {getNotificationIcon(notification.type)}
+                      </div>
+                      <div className="flex-grow">
+                        <div className="flex justify-between items-start">
+                          <h3 className={`font-semibold text-sm ${!notification.read ? 'text-purple-100' : 'text-purple-200'}`}>
+                            {notification.title}
+                          </h3>
+                          <div className="flex items-center gap-2 ml-2">
+                            {!notification.read && (
+                              <Chip size="sm" color="primary" variant="dot">
+                                New
+                              </Chip>
+                            )}
+                            {notification.read && (
+                              <Chip size="sm" color="gray" variant="flat">
+                                Read
+                              </Chip>
+                            )}
+                            <span className="text-sm text-purple-300 flex items-center gap-1">
+                              <ClockIcon className="w-3 h-3" />
+                              {formatTimeAgo(notification.createdAt)}
+                            </span>
+                          </div>
+                        </div>
+                        <p className={`text-xs mt-1 ${!notification.read ? 'text-purple-200' : 'text-purple-300'}`}>
+                          {notification.message}
+                        </p>
+                        {!notification.read && (
+                          <Button 
+                            color="primary" 
+                            size="sm" 
+                            variant="flat"
+                            endContent={<CheckIcon className="w-3 h-3" />}
+                            className="mt-2 bg-purple-600/30 text-purple-200 hover:bg-purple-600/50"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              markAsRead(notification._id);
+                            }}
+                          >
+                            Mark as Read
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
+      )}
 
-        {/* Copyright */}
-        <div className="mt-8 border-t border-blue-700 pt-6 text-center text-gray-200 text-sm">
-          © 2025 HelpNet. All rights reserved.
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12 px-6">
+        <div className="max-w-7xl mx-auto">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {/* Brand */}
+            <div>
+              <div className="flex items-center space-x-3 mb-4">
+                <HelpNetLogo className="w-10 h-10" />
+                <span className="text-2xl font-bold">HelpNet</span>
+              </div>
+              <p className="text-gray-400">
+                Connecting volunteers and communities to make a difference together.
+              </p>
+            </div>
+
+            {/* Links */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Quick Links</h3>
+              <div className="space-y-2">
+                <Link to="/requests" className="block text-gray-400 hover:text-white transition-colors">
+                  Requests
+                </Link>
+                <Link to="/volunteers" className="block text-gray-400 hover:text-white transition-colors">
+                  Volunteers
+                </Link>
+                <Link to="/about" className="block text-gray-400 hover:text-white transition-colors">
+                  About Us
+                </Link>
+              </div>
+            </div>
+
+            {/* Social */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Connect With Us</h3>
+              <div className="flex space-x-4">
+                <a href="#" className="text-gray-400 hover:text-purple-500 transition-colors">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                  </svg>
+                </a>
+                <a href="#" className="text-gray-400 hover:text-purple-400 transition-colors">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M23.953 4.57a10 10 0 01-2.825.775 4.958 4.958 0 002.163-2.723c-.951.555-2.005.959-3.127 1.184a4.92 4.92 0 00-8.384 4.482C7.69 8.095 4.067 6.13 1.64 3.162a4.822 4.822 0 00-.666 2.475c0 1.71.87 3.213 2.188 4.096a4.904 4.904 0 01-2.228-.616v.06a4.923 4.923 0 003.946 4.827 4.996 4.996 0 01-2.212.085 4.936 4.936 0 004.604 3.417 9.867 9.867 0 01-6.102 2.105c-.39 0-.779-.023-1.17-.067a13.995 13.995 0 007.557 2.209c9.053 0 13.998-7.496 13.998-13.985 0-.21 0-.42-.015-.63A9.935 9.935 0 0024 4.59z"/>
+                  </svg>
+                </a>
+                <a href="#" className="text-gray-400 hover:text-pink-500 transition-colors">
+                  <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zm0-2.163c-3.259 0-3.667.014-4.947.072-4.358.2-6.78 2.618-6.98 6.98-.059 1.281-.073 1.689-.073 4.948 0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98 1.281.058 1.689.072 4.948.072 3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98-1.281-.059-1.69-.073-4.949-.073zM5.838 12a6.162 6.162 0 1112.324 0 6.162 6.162 0 01-12.324 0z"/>
+                  </svg>
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-8 pt-8 border-t border-gray-800 text-center text-gray-400">
+            <p>&copy; 2025 HelpNet. All rights reserved.</p>
+          </div>
         </div>
       </footer>
     </>

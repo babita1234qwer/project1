@@ -66,7 +66,7 @@ export default function NotificationsPage() {
           {notifications.map((notification) => (
             <Card 
               key={notification._id} 
-              className={!notification.read ? 'bg-blue-50' : ''}
+              className={!notification.read ? 'bg-blue-50 border-l-4 border-blue-500' : ''}
             >
               <CardHeader>
                 <div className="flex justify-between items-center">
@@ -78,16 +78,30 @@ export default function NotificationsPage() {
               </CardHeader>
               <CardBody>
                 <p>{notification.message}</p>
-                {!notification.read && (
-                  <Button 
-                    color="primary" 
-                    size="sm" 
-                    className="mt-2"
-                    onClick={() => markAsRead(notification._id)}
-                  >
-                    Mark as Read
-                  </Button>
-                )}
+                <div className="flex justify-between items-center mt-3">
+                  <div className="flex gap-2">
+                    {!notification.read && (
+                      <Button 
+                        color="primary" 
+                        size="sm" 
+                        onClick={() => markAsRead(notification._id)}
+                      >
+                        Mark as Read
+                      </Button>
+                    )}
+                  </div>
+                  {notification.emergencyId && (
+                    <a 
+                      href={`/emergency/${notification.emergencyId}`} 
+                      className="text-cyan-600 hover:text-cyan-800 font-semibold text-sm flex items-center gap-1 group"
+                    >
+                      View Details
+                      <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </a>
+                  )}
+                </div>
               </CardBody>
             </Card>
           ))}
