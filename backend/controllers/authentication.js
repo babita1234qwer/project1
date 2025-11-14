@@ -7,17 +7,18 @@ require('dotenv').config();
 const register=async (req, res) => {
     try{
         validate(req.body);
-        const{firstName,emailid,password}=req.body;
+                const { name, email, password } = req.body;
+
         req.body.password=await bcrypt.hash(password,10);
         req.body.role="user";
         const user=await User.create(req.body);
-        const token= jwt.sign({_id:user._id,emailid:emailid,role:"user"},process.env.JWT_SECRET,{expiresIn:'1h'});
-        const reply={
-            firstName:user.firstName,
-            emailid:user.emailid,
-            _id:user._id,
-            role:user.role
-        }
+        const token= jwt.sign({_id:user._id,email},process.env.JWT_SECRET,{expiresIn:'1h'});
+         const reply = {
+            name: user.name,
+            email: user.email,
+            _id: user._id,
+    
+        };
         res.cookie('token', token, {
   maxAge: 60 * 60 * 1000,
   httpOnly: true,
@@ -33,8 +34,8 @@ const register=async (req, res) => {
     }}
 const login=async (req, res) => {
     try{
-        const {emailid,password}=req.body;
-        if(!emailid){
+        const {email,password}=req.body;
+        if(!email){
             throw new Error("invalid credential");
         }
         if(!password){
@@ -42,18 +43,18 @@ const login=async (req, res) => {
         }
 
 
-        const user=await User.findOne({emailid:emailid});
+        const user=await User.findOne({email});
         const match= await bcrypt.compare(password,user.password);
         if(!match){
             throw new Error("invalid credential");
         }
-        const reply={
-            firstName:user.firstName,
-            emailid:user.emailid,
-            _id:user._id,
-            role: user.role 
-        }
-        const token= jwt.sign({_id:user._id,emailid:emailid,role:user.role},process.env.JWT_SECRET,{expiresIn:'1h'});
+         const reply = {
+            name: user.name,
+            email: user.email,
+            _id: user._id,
+            
+        };
+        const token= jwt.sign({_id:user._id,email,role:user.role},process.env.JWT_SECRET,{expiresIn:'1h'});
         res.cookie('token', token, {
   maxAge: 60 * 60 * 1000,
   httpOnly: true,
