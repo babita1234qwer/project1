@@ -1,36 +1,65 @@
 const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const redisclient = require("../config/redis");
-
+const mongoose = require('mongoose');
 require('dotenv').config();
 
+// prefer env secret, fallback to the old value for backwards compatibility
+const JWT_SECRET = process.env.JWT_SECRET || "01b0142fc8369a6b8046bc0f6fbbda6b910b173fa0b5ae6af833cb48107a5892";
 
 const userMiddleware = async (req, res, next) => {
     try{
-            const token = req.cookies.token || req.headers.authorization?.split(" ")[1];
-        if(!token){
-            throw new Error("invalid token");
+        // If DB not connected, respond 503 so callers don't trigger Mongoose buffering
+        if (mongoose.connection.readyState !== 1) {
+            console.error('MongoDB not connected (readyState=', mongoose.connection.readyState, ')');
+            return res.status(503).json({ message: 'Service unavailable: database not connected' });
         }
-        const payload=jwt.verify(token,process.env.JWT_SECRET);
-        const{_id}=payload;
-        if(!_id){
-            throw new Error("invalid token");
+
+        // detect token source (cookie or Authorization header)
+        const cookieToken = req.cookies?.token;
+        const headerAuth = req.headers?.authorization;
+        const headerToken = typeof headerAuth === 'string' && headerAuth.split(' ')[1];
+        const token = cookieToken || headerToken;
+
+        if (!token) {
+            console.warn('No auth token provided on request', { path: req.path, method: req.method });
+            return res.status(401).json({ message: 'No token provided' });
         }
-        const result=await User.findById(_id);
-        if(!result){
-            throw new Error("user doesn't exist");
+
+        // Log token source for debugging (DO NOT log the token value)
+        const tokenSource = cookieToken ? 'cookie' : (headerToken ? 'authorization header' : 'unknown');
+        console.log(`Auth token found in: ${tokenSource} for path ${req.path}`);
+
+        let payload;
+        try {
+            payload = jwt.verify(token, JWT_SECRET);
+        } catch (err) {
+            console.warn('JWT verify failed:', err.message);
+            return res.status(401).json({ message: 'Invalid or expired token' });
         }
-        const isblocked=await redisclient.exists(`token:${token}`);
-        if(isblocked){
-            throw new Error("user is blocked");
+
+        const { _id } = payload || {};
+        if (!_id) {
+            return res.status(401).json({ message: 'Invalid token payload' });
         }
-        req.result=result;
+
+        const result = await User.findById(_id);
+        if (!result) {
+            return res.status(401).json({ message: "User not found" });
+        }
+
+        const isblocked = await redisclient.exists(`token:${token}`);
+        if (isblocked) {
+            return res.status(403).json({ message: 'User is blocked' });
+        }
+
+        req.user = result;
         next();
 
     }
     catch(err){
-        console.log(err);
-        res.status(401).send({message:err.message});
+        console.error('userMiddleware error:', err);
+        res.status(500).send({message:'Authentication middleware error'});
     }}
 
-    module.exports=userMiddleware;
+module.exports=userMiddleware;
