@@ -3,7 +3,7 @@ const validate=require('../utils/validator');
 const bcrypt=require('bcrypt');
 const jwt=require('jsonwebtoken');
 const redisclient=require('../config/redis');
-
+require('dotenv').config();
 const register=async (req, res) => {
     try{
         validate(req.body);
