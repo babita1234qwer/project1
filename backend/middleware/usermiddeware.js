@@ -2,9 +2,6 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/user");
 const redisclient = require("../config/redis");
 
-const JWT_SECRET = "01b0142fc8369a6b8046bc0f6fbbda6b910b173fa0b5ae6af833cb48107a5892";
-
-
 
 
 
@@ -14,7 +11,7 @@ const userMiddleware = async (req, res, next) => {
         if(!token){
             throw new Error("invalid token");
         }
-        const payload=jwt.verify(token,JWT_SECRET);
+        const payload=jwt.verify(token,process.env.JWT_SECRET);
         const{_id}=payload;
         if(!_id){
             throw new Error("invalid token");
@@ -27,7 +24,7 @@ const userMiddleware = async (req, res, next) => {
         if(isblocked){
             throw new Error("user is blocked");
         }
-        req.user = result;
+        req.result=result;
         next();
 
     }
