@@ -21,7 +21,7 @@ const EmergenciesPage = () => {
     const fetchEmergencies = async () => {
       try {
         setLoading(true);
-        const response = await axiosClient.get(`${API_URL}/api/emergencies/active`);
+        const response = await axiosClient.get('/api/emergencies/active');
         setEmergencies(response.data.data || []);
       } catch (err) {
         setError('Failed to fetch emergencies');
