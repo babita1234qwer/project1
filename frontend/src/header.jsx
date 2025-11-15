@@ -487,7 +487,7 @@ export default function NavbarHelpNet() {
                         <DropdownItem key="view-all" className="opacity-100 bg-gradient-to-r from-purple-800/50 to-indigo-800/50">
                           <Button
                             as={Link}
-                            to="/notifications"
+                            to="/emergency/notifications"
                             color="primary"
                             variant="flat"
                             className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700"
@@ -739,148 +739,164 @@ export default function NavbarHelpNet() {
         </section>
       )}
 
-      {/* Notifications Page */}
-      {isNotificationsPage && (
-        <div className="container mx-auto px-4 py-8 max-w-4xl">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-            <div className="flex items-center gap-2">
-              <h1 className="text-3xl font-bold text-purple-100">Notifications</h1>
-              {unreadCount > 0 && (
-                <Badge 
-                  color="primary" 
-                  content={unreadCount > 99 ? "99+" : unreadCount}
-                  className="w-6 h-6 animate-pulse"
-                  shape="circle"
-                />
-              )}
-            </div>
-            <div className="flex gap-2">
-              <div className="flex bg-purple-800/30 rounded-lg p-1">
-                <Button
-                  size="sm"
-                  variant={notificationFilter === 'all' ? 'solid' : 'light'}
-                  color={notificationFilter === 'all' ? 'primary' : 'default'}
-                  onClick={() => setNotificationFilter('all')}
-                  className="px-3"
-                >
-                  All
-                </Button>
-                <Button
-                  size="sm"
-                  variant={notificationFilter === 'unread' ? 'solid' : 'light'}
-                  color={notificationFilter === 'unread' ? 'primary' : 'default'}
-                  onClick={() => setNotificationFilter('unread')}
-                  className="px-3"
-                >
-                  Unread
-                </Button>
-                <Button
-                  size="sm"
-                  variant={notificationFilter === 'read' ? 'solid' : 'light'}
-                  color={notificationFilter === 'read' ? 'primary' : 'default'}
-                  onClick={() => setNotificationFilter('read')}
-                  className="px-3"
-                >
-                  Read
-                </Button>
-                <Button
-                  size="sm"
-                  variant="light"
-                  color="gray"
-                  onClick={() => setShowReadNotifications(!showReadNotifications)}
-                  className="px-3"
-                >
-                  {showReadNotifications ? 'Hide Read' : 'Show Read'}
-                </Button>
-              </div>
-              {unreadCount > 0 && (
-                <Button color="primary" onClick={markAllAsRead} className="bg-purple-600 hover:bg-purple-700">
-                  Mark All as Read ✓
-                </Button>
-              )}
-            </div>
-          </div>
-          
-          {getFilteredNotifications().length === 0 ? (
-            <div className="text-center py-12 bg-purple-800/20 rounded-lg">
-              <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-700/30 rounded-full mb-4">
-                <span className="text-2xl">🔔</span>
-              </div>
-              <h3 className="text-xl font-medium text-purple-100 mb-1">No notifications</h3>
-              <p className="text-purple-300">
-                {notificationFilter !== 'all' 
-                  ? `No ${notificationFilter} notifications to display` 
-                  : "You're all caught up! Check back later for new notifications."}
-              </p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {getFilteredNotifications().map((notification) => (
-                <div 
-                  key={notification._id} 
-                  className={`transition-all duration-200 hover:shadow-md rounded-lg border ${
-                    !notification.read 
-                      ? 'bg-gradient-to-r from-purple-700/30 to-indigo-700/30 border-l-4 border-purple-400' 
-                      : 'bg-purple-800/20 border-l-4 border-purple-600/50'
-                  }`}
-                >
-                  <div className="p-4">
-                    <div className="flex items-start gap-3">
-                      <div className={`flex-shrink-0 mt-1 p-2 rounded-full ${
-                        !notification.read ? 'bg-purple-600/30' : 'bg-purple-800/30'
-                      }`}>
-                        {getNotificationIcon(notification.type)}
-                      </div>
-                      <div className="flex-grow">
-                        <div className="flex justify-between items-start">
-                          <h3 className={`font-semibold text-sm ${!notification.read ? 'text-purple-100' : 'text-purple-200'}`}>
-                            {notification.title}
-                          </h3>
-                          <div className="flex items-center gap-2 ml-2">
-                            {!notification.read && (
-                              <Chip size="sm" color="primary" variant="dot">
-                                New
-                              </Chip>
-                            )}
-                            {notification.read && (
-                              <Chip size="sm" color="gray" variant="flat">
-                                Read
-                              </Chip>
-                            )}
-                            <span className="text-sm text-purple-300 flex items-center gap-1">
-                              <ClockIcon className="w-3 h-3" />
-                              {formatTimeAgo(notification.createdAt)}
-                            </span>
-                          </div>
-                        </div>
-                        <p className={`text-xs mt-1 ${!notification.read ? 'text-purple-200' : 'text-purple-300'}`}>
-                          {notification.message}
-                        </p>
-                        {!notification.read && (
-                          <Button 
-                            color="primary" 
-                            size="sm" 
-                            variant="flat"
-                            endContent={<CheckIcon className="w-3 h-3" />}
-                            className="mt-2 bg-purple-600/30 text-purple-200 hover:bg-purple-600/50"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              markAsRead(notification._id);
-                            }}
-                          >
-                            Mark as Read
-                          </Button>
+ {/* Notifications */}
+              {isAuthenticated && (
+                <Dropdown placement="bottom-end">
+                  <DropdownTrigger>
+                    <button className="relative p-2 rounded-full hover:bg-purple-700/30 transition-colors duration-300">
+                      <div className="flex flex-row gap-2 items-center">
+                        <NotificationIcon className="w-6 h-6 text-gray-100" />
+                        {unreadCount > 0 && (
+                          <Badge 
+                            color="danger" 
+                            content={unreadCount > 99 ? "99+" : unreadCount}
+                            className="w-6 h-6 animate-pulse"
+                            shape="circle"
+                          />
                         )}
                       </div>
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
+                    </button>
+                  </DropdownTrigger>
+                  <DropdownMenu aria-label="Notifications" className="w-96 max-h-96 overflow-y-auto bg-gradient-to-b from-purple-900/95 to-indigo-900/95 backdrop-blur-lg border border-purple-700/50">
+                    <DropdownItem key="header" className="opacity-100 bg-gradient-to-r from-purple-800/50 to-indigo-800/50">
+                      <div className="flex justify-between items-center py-2">
+                        <span className="font-semibold text-purple-100">Notifications</span>
+                        {unreadCount > 0 && (
+                          <button 
+                            onClick={markAllAsRead}
+                            className="text-xs bg-purple-700/50 text-purple-200 hover:bg-purple-600/50 px-2 py-1 rounded-full transition-colors"
+                          >
+                            Mark all as read
+                          </button>
+                        )}
+                      </div>
+                      <div className="flex bg-purple-800/30 rounded-lg p-1 mt-2 shadow-sm">
+                        <Button
+                          size="sm"
+                          variant={notificationFilter === 'all' ? 'solid' : 'light'}
+                          color={notificationFilter === 'all' ? 'primary' : 'default'}
+                          onClick={() => setNotificationFilter('all')}
+                          className="px-3"
+                        >
+                          All
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={notificationFilter === 'unread' ? 'solid' : 'light'}
+                          color={notificationFilter === 'unread' ? 'primary' : 'default'}
+                          onClick={() => setNotificationFilter('unread')}
+                          className="px-3"
+                        >
+                          Unread
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant={notificationFilter === 'read' ? 'solid' : 'light'}
+                          color={notificationFilter === 'read' ? 'primary' : 'default'}
+                          onClick={() => setNotificationFilter('read')}
+                          className="px-3"
+                        >
+                          Read
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="light"
+                          color="gray"
+                          onClick={() => setShowReadNotifications(!showReadNotifications)}
+                          className="px-3"
+                        >
+                          {showReadNotifications ? 'Hide Read' : 'Show Read'}
+                        </Button>
+                      </div>
+                    </DropdownItem>
+                    {getFilteredNotifications().length > 0 ? (
+                      <>
+                        {getFilteredNotifications().slice(0, 5).map((notif) => (
+                          <DropdownItem 
+                            key={notif._id} 
+                            className={`py-3 border-b border-purple-700/30 ${
+                              !notif.read 
+                                ? 'bg-gradient-to-r from-purple-700/30 to-indigo-700/30' 
+                                : 'bg-purple-800/20 hover:bg-purple-700/30'
+                            }`}
+                            onClick={() => markAsRead(notif._id)}
+                          >
+                            <div className="flex items-start gap-3">
+                              <div className={`flex-shrink-0 mt-1 p-2 rounded-full ${
+                                !notif.read ? 'bg-purple-600/30' : 'bg-purple-800/30'
+                              }`}>
+                                {getNotificationIcon(notif.type)}
+                              </div>
+                              <div className="flex-grow">
+                                <div className="flex justify-between items-start">
+                                  <h3 className={`font-semibold text-sm ${!notif.read ? 'text-purple-100' : 'text-purple-200'}`}>
+                                    {notif.title}
+                                  </h3>
+                                  <div className="flex items-center gap-2 ml-2">
+                                    {!notif.read && (
+                                      <Chip size="sm" color="primary" variant="dot">
+                                        New
+                                      </Chip>
+                                    )}
+                                    {notif.read && (
+                                      <Chip size="sm" color="gray" variant="flat">
+                                        Read
+                                      </Chip>
+                                    )}
+                                    <span className="text-sm text-purple-300 flex items-center gap-1">
+                                      <ClockIcon className="w-3 h-3" />
+                                      {formatTimeAgo(notif.createdAt)}
+                                    </span>
+                                  </div>
+                                </div>
+                                <p className={`text-xs mt-1 ${!notif.read ? 'text-purple-200' : 'text-purple-300'}`}>
+                                  {notif.message}
+                                </p>
+                                {!notif.read && (
+                                  <Button 
+                                    color="primary" 
+                                    size="sm" 
+                                    variant="flat"
+                                    endContent={<CheckIcon className="w-3 h-3" />}
+                                    className="mt-2 bg-purple-600/30 text-purple-200 hover:bg-purple-600/50"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      markAsRead(notif._id);
+                                    }}
+                                  >
+                                    Mark as Read
+                                  </Button>
+                                )}
+                              </div>
+                            </div>
+                          </DropdownItem>
+                        ))}
+                        <DropdownItem key="view-all" className="opacity-100 bg-gradient-to-r from-purple-800/50 to-indigo-800/50">
+                         <a 
+  href="/emergency/notifications"
+  className="w-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white hover:from-purple-700 hover:to-indigo-700 inline-flex items-center justify-center font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 focus:ring-offset-transparent"
+>
+  View All Notifications
+</a>
+                        </DropdownItem>
+                      </>
+                    ) : (
+                      <DropdownItem key="empty">
+                        <div className="text-center py-12 bg-gradient-to-r from-purple-800/30 to-indigo-800/30 rounded-lg">
+                          <div className="inline-flex items-center justify-center w-16 h-16 bg-purple-700/30 rounded-full mb-2">
+                            <span className="text-2xl">🔔</span>
+                          </div>
+                          <p className="text-purple-300">
+                            {notificationFilter !== 'all' 
+                              ? `No ${notificationFilter} notifications to display` 
+                              : "No notifications"}
+                          </p>
+                        </div>
+                      </DropdownItem>
+                    )}
+                  </DropdownMenu>
+                </Dropdown>
+              )}
       {/* Footer */}
       <footer className="bg-gray-900 text-white py-12 px-6">
         <div className="max-w-7xl mx-auto">

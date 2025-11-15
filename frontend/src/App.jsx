@@ -11,11 +11,13 @@ import EmergencyDetails from './pages/emergencydet.jsx';
 //import NotificationToast from './components/NotificationToast';
 
 import EmergencyRequest from "./pages/EmergencyRequest.jsx";
-import EmergencyForm from './pages/EmergencyForm.jsx';
+import EmergencyForm from "./pages/EmergencyForm.jsx";
+
  import EmergenciesPage from "./pages/EmergenciesPage.jsx";
 import EmergencyMapPage from './pages/EmergencyMapPage';
 import AboutPage from "./pages/AboutEmergenciesPage.jsx"; // Import the new component
 import { connectSocket, disconnectSocket } from './services/socket';
+import NotificationPage from './pages/AllNotification.jsx';
 
 function App(){
   const {isAuthenticated,user,loading} = useSelector((state) => state.auth);
@@ -56,6 +58,7 @@ useEffect(() => {
 <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/about" element={<AboutPage />} />
 <Route path="/emergency/map/:emergencyId" element={<EmergencyDetails />} />
+<Route path="/emergency/notifications" element={<NotificationPage/>} />
     </Routes>
   )
 }
