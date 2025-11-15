@@ -35,7 +35,7 @@ const updateLocation = async (req, res) => {
     }
 };
 
-// Add other user-related functions here if needed
+
 const getUserProfile = async (req, res) => {
     try {
         const userId = req.user._id;
@@ -89,7 +89,7 @@ const registerPushToken = async (req, res) => {
 
     const user = await User.findById(userId);
     
-    // Check if token already exists
+ 
     const tokenExists = user.pushTokens.some(t => t.token === token);
     
     if (!tokenExists) {

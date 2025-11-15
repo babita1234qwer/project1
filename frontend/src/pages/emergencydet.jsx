@@ -15,14 +15,14 @@ Avatar,
 Progress,
 } from '@heroui/react';
 
-// --- Map Imports ---
+
 import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from 'react-leaflet';
 import { decodePolyline } from '../utils/polyline';
 import axios from 'axios';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 
-// --- Import the ChatBox component ---
+
 import ChatBox from '../components/ChatBox';
 const API_URL = import.meta.env.VITE_API_URL;
 
@@ -57,7 +57,6 @@ const EmergencyDetails = () => {
 const { emergencyId } = useParams();
 const currentUserId = useSelector((state) => state.auth.user?._id);
 
-// --- State ---
 const [emergency, setEmergency] = useState(null);
 const [loading, setLoading] = useState(true);
 const [error, setError] = useState('');

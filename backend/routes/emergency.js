@@ -3,7 +3,7 @@ const emergencyRouter = express.Router();
 const { createEmergency, getActiveEmergencies, respondToEmergency, updateEmergencyStatus,getEmergency } = require('../controllers/emergencycontroler');
 const userMiddleware = require('../middleware/usermiddeware');
 
-// Create a new emergency report
+
 emergencyRouter.post('/create', userMiddleware,createEmergency);
 
 // Get all active emergencies

@@ -1,10 +1,8 @@
-// controllers/websiteReviewController.js
+
 
 const WebsiteReview = require('../models/WebsiteReview');
 
-// @desc    Create a new website review
-// @route   POST /api/website-reviews
-// @access  Public
+
  const createWebsiteReview = async (req, res) => {
   try {
     const { rating, comment, reviewerName, reviewerEmail } = req.body;
@@ -32,14 +30,12 @@ const WebsiteReview = require('../models/WebsiteReview');
   }
 };
 
-// @desc    Get all approved website reviews
-// @route   GET /api/website-reviews
-// @access  Public
+
 const getApprovedWebsiteReviews = async (req, res) => {
   try {
     const reviews = await WebsiteReview.find({ isApproved: true }).sort({ createdAt: -1 });
 
-    // Calculate average rating
+    
     const averageRating = reviews.length > 0 
       ? (reviews.reduce((sum, review) => sum + review.rating, 0) / reviews.length).toFixed(1)
       : 0;

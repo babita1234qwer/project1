@@ -1,4 +1,4 @@
-// routes/message.js
+
 const express = require('express');
 const Messagerouter = express.Router();
 const { getMessages, sendMessage } = require('../controllers/messagecontroller');

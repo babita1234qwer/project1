@@ -1,4 +1,4 @@
-// models/donationSchema.js
+
 
 const mongoose = require('mongoose');
 

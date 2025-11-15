@@ -9,13 +9,13 @@ const JWT_SECRET = process.env.JWT_SECRET || "01b0142fc8369a6b8046bc0f6fbbda6b91
 
 const userMiddleware = async (req, res, next) => {
     try{
-        // If DB not connected, respond 503 so callers don't trigger Mongoose buffering
+       
         if (mongoose.connection.readyState !== 1) {
             console.error('MongoDB not connected (readyState=', mongoose.connection.readyState, ')');
             return res.status(503).json({ message: 'Service unavailable: database not connected' });
         }
 
-        // detect token source (cookie or Authorization header)
+
         const cookieToken = req.cookies?.token;
         const headerAuth = req.headers?.authorization;
         const headerToken = typeof headerAuth === 'string' && headerAuth.split(' ')[1];
@@ -26,7 +26,7 @@ const userMiddleware = async (req, res, next) => {
             return res.status(401).json({ message: 'No token provided' });
         }
 
-        // Log token source for debugging (DO NOT log the token value)
+      
         const tokenSource = cookieToken ? 'cookie' : (headerToken ? 'authorization header' : 'unknown');
         console.log(`Auth token found in: ${tokenSource} for path ${req.path}`);
 

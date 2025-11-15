@@ -1,7 +1,7 @@
-// controllers/notificationcontroller.js
+
 const Notification = require("../models/notification");
 
-// Reusable response helpers
+
 const successResponse = (res, data, message = "Success", status = 200) => {
   return res.status(status).json({
     ok: true,
@@ -20,10 +20,10 @@ const errorResponse = (res, message = "Error", status = 500, details = null) => 
   });
 };
 
-// Controller methods
+
 async function getUserNotifications(req, res) {
   try {
-    const userId = req.user._id; // Use consistent user ID extraction
+    const userId = req.user._id; 
     const notifications = await Notification.find({ userId })
       .sort({ createdAt: -1 })
       .limit(50);
@@ -38,7 +38,7 @@ async function getUserNotifications(req, res) {
 async function markNotificationAsRead(req, res) {
   try {
     const { notificationId } = req.params;
-    const userId = req.user._id; // Use consistent user ID extraction
+    const userId = req.user._id; 
 
     const updated = await Notification.findOneAndUpdate(
       { _id: notificationId, userId },
@@ -59,7 +59,7 @@ async function markNotificationAsRead(req, res) {
 
 async function markAllNotificationsAsRead(req, res) {
   try {
-    const userId = req.user._id; // Use consistent user ID extraction
+    const userId = req.user._id; 
 
     const result = await Notification.updateMany(
       { userId, status: { $ne: "read" } },

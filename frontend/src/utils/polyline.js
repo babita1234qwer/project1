@@ -1,4 +1,3 @@
-// src/utils/polyline.js
 
 /**
  * Decodes an encoded polyline string into a list of lat/lng coordinates.

@@ -1,4 +1,4 @@
-// utils/socket.js
+
 import { io } from 'socket.io-client';
 
 const API_URI = import.meta.env.VITE_API_URI;

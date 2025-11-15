@@ -1,4 +1,4 @@
-// pages/Notifications.jsx
+
 import { useState, useEffect } from 'react';
 import axiosClient from "../utils/axiosclient";
 import { Card, CardBody, CardHeader, Button } from '@heroui/react';

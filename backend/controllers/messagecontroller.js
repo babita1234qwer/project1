@@ -1,4 +1,4 @@
-// controllers/messageController.js
+
 const Message = require('../models/message');
 const Emergency = require('../models/emergency');
 

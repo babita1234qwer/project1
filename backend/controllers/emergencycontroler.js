@@ -12,7 +12,6 @@ try {
   io = global.io || null;
 }
 
-// ✅ Helper response functions
 function successResponse(res, data, message = "Success", status = 200) {
   return res.status(status).json({
     success: true,
@@ -29,7 +28,6 @@ function errorResponse(res, message = "Error", status = 500, error = null) {
   });
 }
 
-// ✅ Socket emitters
 const emitToUser = (userId, event, data) => {
   if (io) io.to(`user:${userId}`).emit(event, data);
 };
@@ -42,7 +40,6 @@ const emitToAll = (event, data) => {
   if (io) io.emit(event, data);
 };
 
-// ✅ Event constants
 const EVENTS = {
   NEW_EMERGENCY: "newEmergency",
   EMERGENCY_CREATED: "emergencyCreated",
@@ -52,7 +49,7 @@ const EVENTS = {
   EMERGENCY_RESOLVED: "emergencyResolved",
 };
 
-// ✅ Dummy push notification sender
+
 const sendPushNotification = async (tokens, title, message, data) => {
   try {
     console.log(`📬 Sending push notification: ${title} - ${message}`);
@@ -63,12 +60,11 @@ const sendPushNotification = async (tokens, title, message, data) => {
   }
 };
 
-// ✅ Fallback for address generation
+
 const generateBasicAddress = (latitude, longitude) => {
   return `Location: ${latitude.toFixed(4)}°N, ${longitude.toFixed(4)}°E`;
 };
 
-// ✅ Reverse Geocoding with timeout, IPv4, and fallback
 const getAddressFromCoordinates = async (latitude, longitude) => {
   console.log(`[INFO] Reverse geocoding coordinates: ${latitude}, ${longitude}`);
   
@@ -108,13 +104,13 @@ const getAddressFromCoordinates = async (latitude, longitude) => {
   }
 };
 
-// ✅ Create Emergency
+
 const createEmergency = async (req, res) => {
   try {
     let { emergencyType, description, longitude, latitude, address } = req.body;
     const userId = req.user._id;
 
-    // Basic validation
+   
     if (!emergencyType || !description || !longitude || !latitude) {
       return errorResponse(res, "Missing required fields", 400);
     }
@@ -126,12 +122,11 @@ const createEmergency = async (req, res) => {
       return errorResponse(res, "Invalid coordinates", 400);
     }
 
-    // Get address (with fallback)
+    
     if (!address || address.trim() === "") {
       address = await getAddressFromCoordinates(latitude, longitude);
     }
 
-    // Create emergency document
     const emergency = new Emergency({
       createdBy: userId,
       emergencyType,
@@ -146,12 +141,12 @@ const createEmergency = async (req, res) => {
 
     await emergency.save();
 
-    // Find nearby users
+  
     const nearbyUsers = await User.find({
       _id: { $ne: userId },
       availabilityStatus: true,
       "currentLocation.lastUpdated": {
-        $gte: new Date(Date.now() - 30 * 60 * 1000), // last 30 minutes
+        $gte: new Date(Date.now() - 30 * 60 * 1000), 
       },
       "currentLocation.coordinates": {
         $near: {
@@ -164,7 +159,7 @@ const createEmergency = async (req, res) => {
       },
     }).select("_id name pushTokens");
 
-    // Create notifications
+   
     const notifications = nearbyUsers.map((user) => ({
       userId: user._id,
       emergencyId: emergency._id,
@@ -175,7 +170,7 @@ const createEmergency = async (req, res) => {
 
     if (notifications.length > 0) await Notification.insertMany(notifications);
 
-    // Send push notifications
+   
     const pushPromises = nearbyUsers.map((user) => {
       if (user.pushTokens?.length > 0) {
         const tokens = user.pushTokens.map((t) => t.token);
@@ -226,7 +221,7 @@ const createEmergency = async (req, res) => {
   }
 };
 
-// ✅ Get Active Emergencies
+
 const getActiveEmergencies = async (req, res) => {
   try {
     const emergencies = await Emergency.find({
@@ -242,7 +237,7 @@ const getActiveEmergencies = async (req, res) => {
   }
 };
 
-// ✅ Get Emergency Details
+
 const getEmergency = async (req, res) => {
   try {
     const { emergencyId } = req.params;
@@ -263,7 +258,7 @@ const getEmergency = async (req, res) => {
   }
 };
 
-// ✅ Respond to Emergency
+
 const respondToEmergency = async (req, res) => {
   try {
     const { emergencyId } = req.params;
@@ -328,7 +323,7 @@ const respondToEmergency = async (req, res) => {
   }
 };
 
-// ✅ Update Emergency Status
+
 const updateEmergencyStatus = async (req, res) => {
   try {
     const { emergencyId } = req.params;
@@ -379,7 +374,7 @@ const updateEmergencyStatus = async (req, res) => {
   }
 };
 
-// ✅ Export all
+
 module.exports = {
   createEmergency,
   getActiveEmergencies,

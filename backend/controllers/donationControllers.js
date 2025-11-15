@@ -1,8 +1,8 @@
-// controllers/donationController.js
+
 
 const Razorpay = require('razorpay');
 const crypto = require('crypto');
-const Donation = require('../models/donationSchema.js'); // Use the new Donation model
+const Donation = require('../models/donationSchema.js'); 
 
 require('dotenv').config();
 
@@ -11,11 +11,10 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// Create Razorpay Order for a Donation
 const createDonationOrder = async (req, res) => {
   try {
-    // Let's allow the frontend to specify the amount, or use a default
-    const amount = req.body.amount || 20000; // Default to ₹200.00 in paise
+  
+    const amount = req.body.amount || 20000; 
     console.log("Creating donation order for amount:", amount);
 
     const options = {
@@ -41,11 +40,11 @@ const createDonationOrder = async (req, res) => {
   }
 };
 
-// Verify Donation Payment
+
 const verifyDonation = async (req, res) => {
   const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
 
-  // Ensure user is authenticated
+
   if (!req.result || !req.result._id) {
     return res.status(401).json({ success: false, message: "Unauthorized" });
   }
@@ -67,7 +66,7 @@ const verifyDonation = async (req, res) => {
         Donation.create({
           userId: req.result._id,
           paymentId: razorpay_payment_id,
-          amount: order.amount, // Save the amount from the order
+          amount: order.amount, 
         });
       })
       .catch(err => {

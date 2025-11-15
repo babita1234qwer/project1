@@ -1,7 +1,7 @@
 const express = require('express');
 const http = require('http');
 const redisclient = require("./config/redis");
-// --- REMOVED: The old socket utility is no longer needed ---
+
 // const socket = require('./config/socket'); 
 const path = require('path');
 require('dotenv').config({ path: path.resolve(__dirname, '../.env') });
@@ -18,20 +18,19 @@ const Donationrouter = require('./routes/donationRoutes');
 const Messagerouter = require('./routes/messagerouter');
 
 const { initNotificationSocket } = require('./controllers/notificationcontroller');
-// --- This import is correct and stays ---
+
 const { initializeSocket } = require('./socket/socketServer');
 
 const app = express();
 const server = http.createServer(app);
 
 
-// --- REMOVED: The old socket initialization and event handlers ---
 // This logic is now handled inside the new `initializeSocket` function
 // const io = socket.init(server);
 // io.on('connection', (socket) => { ... });
 // global.io = io;
 
-// --- ADDED: Initialize the new, more powerful Socket.IO server ---
+
 // This single line replaces all the old socket logic above
 initializeSocket(server);
 const PORT = process.env.PORT || 3001;

@@ -12,7 +12,7 @@ import axiosClient from '../utils/axiosclient';
 const API_URL = import.meta.env.VITE_API_URL;
 
 
-// Helper function to get an icon for each emergency type
+
 const getEmergencyIcon = (type) => {
 const icons = {
 medical: '🚑',
@@ -68,7 +68,7 @@ return gradients[type] || 'bg-gradient-to-br from-gray-800/40 to-gray-900/40 bor
 return (
 <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900">
 <div className="container mx-auto px-4 py-8">
-{/* Main Map Card with Enhanced Background */}
+
 <Card className="w-full mb-8 bg-gradient-to-r from-indigo-600/20 to-purple-600/20 backdrop-blur-sm border border-indigo-400/30 shadow-2xl">
 <CardHeader className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-gray-200 bg-gradient-to-r from-indigo-800/50 to-purple-800/50">
 <div>
@@ -153,7 +153,7 @@ Crime
 key={emergency._id}
 isPressable
 shadow="md"
-// Enhanced background with gradient based on emergency type
+
 className={`${getEmergencyCardGradient(emergency.emergencyType)} backdrop-blur-sm hover:scale-105 hover:shadow-xl transition-all duration-300 border`}
 href={`/emergency/${emergency._id}`}
 >
@@ -175,12 +175,12 @@ emergency.status === 'active'
 </span>
 </div>
 
-{/* Description */}
+
 <p className="text-sm text-purple-100 mb-3 line-clamp-2">
 {emergency.description}
 </p>
 
-{/* Location */}
+
 <div className="flex items-start gap-2 text-xs text-purple-200 mb-4">
 <svg className="w-4 h-4 mt-0.5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
 <path fillRule="evenodd" d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z" clipRule="evenodd" />
@@ -188,9 +188,9 @@ emergency.status === 'active'
 <span>{emergency.location?.address || 'Location not specified'}</span>
 </div>
 
-{/* Footer with "View Details" link */}
+
 <div className="flex justify-end pt-2 border-t border-purple-600/50">
-<a href={`/emergency/map/${emergency._id}`} className="text-cyan-400 hover:text-cyan-300">
+<a href={`#/emergency/map/${emergency._id}`} className="text-cyan-400 hover:text-cyan-300">
 <span className="font-semibold text-sm flex items-center gap-1 group">
 View Details
 <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
