@@ -190,7 +190,7 @@ emergency.status === 'active'
 
 {/* Footer with "View Details" link */}
 <div className="flex justify-end pt-2 border-t border-purple-600/50">
-<a href={`/emergency/${emergency._id}`} className="text-cyan-400 hover:text-cyan-300">
+<a href={`/emergency/map/${emergency._id}`} className="text-cyan-400 hover:text-cyan-300">
 <span className="font-semibold text-sm flex items-center gap-1 group">
 View Details
 <svg className="w-4 h-4 transition-transform group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -7,7 +7,7 @@ import { useEffect } from 'react';
 import Signup from "./pages/signup";
 // App.js or your routing file
 import NotificationsPage from './pages/Notifications';
-import EmergencyDetail from './pages/EmergencyDetails';
+import EmergencyDetails from './pages/emergencydet.jsx';
 //import NotificationToast from './components/NotificationToast';
 
 import EmergencyRequest from "./pages/EmergencyRequest.jsx";
@@ -55,7 +55,7 @@ useEffect(() => {
 // Add this route to your router
 <Route path="/notifications" element={<NotificationsPage />} />
         <Route path="/about" element={<AboutPage />} />
-<Route path="/emergency/:emergencyId" element={<EmergencyDetail />} />
+<Route path="/emergency/map/:emergencyId" element={<EmergencyDetails />} />
     </Routes>
   )
 }
