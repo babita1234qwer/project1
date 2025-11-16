@@ -165,7 +165,7 @@ const createEmergency = async (req, res) => {
       emergencyId: emergency._id,
       type: "emergency_alert",
       title: `${emergencyType.toUpperCase()} EMERGENCY NEARBY`,
-      message: `Someone needs help with a ${emergencyType} emergency near ${address}. Can you respond?`,
+      message: `Someone needs help with a ${emergencyType} emergency near ${location.address}. Can you respond?`,
     }));
 
     if (notifications.length > 0) await Notification.insertMany(notifications);

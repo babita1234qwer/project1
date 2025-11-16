@@ -723,7 +723,7 @@ export default function NavbarHelpNet() {
                 size="lg"
                 className="bg-white text-purple-700 px-8 py-4 rounded-full text-lg font-semibold shadow-xl hover:shadow-2xl transform hover:scale-105 transition-all duration-300"
               >
-                Become a Volunteer
+              Lets Connect
               </Button>
               <Button
                 as={Link}
